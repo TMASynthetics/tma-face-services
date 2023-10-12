@@ -156,3 +156,4 @@ gfpgan/
 tests/
 .venv/
 
+docker_cmd

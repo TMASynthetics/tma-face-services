@@ -3,21 +3,31 @@ import threading
 import insightface
 import numpy
 
-from processors.face_analyser import FaceAnalyser
-
+from processors.face_analyzer import FaceAnalyzer
+from processors.face_enhancer import FaceEnhancer
 
 class FaceSwapper:
   
 	def __init__(self):
 		self.model = insightface.model_zoo.get_model('.assets/models/inswapper_128.onnx', download=False, download_zip=False)
-		self.face_analyser = FaceAnalyser()
+		self.face_analyzer = FaceAnalyzer()
+		self.face_enhancer = FaceEnhancer()
 
-	def run(self, img_source, img_target):
+	def run(self, img_source, img_target, enhance=False):
 
-		face_target = self.face_analyser.run(img_target)
-		face_source = self.face_analyser.run(img_source)
+		swapped_frame = img_target.copy()
 
-		return self.model.get(img_target, face_target[0], face_source[0])
+		faces_target = self.face_analyzer.run(img_target)
+		faces_source = self.face_analyzer.run(img_source)
+
+		if len(faces_source) > 0:
+			for face_target in faces_target:
+				swapped_frame = self.model.get(swapped_frame, face_target, faces_source[0])
+
+		if enhance:
+			swapped_frame = self.face_enhancer.run(swapped_frame)
+
+		return swapped_frame
 
 
 

@@ -2,7 +2,7 @@ from typing import Any, Optional, List
 import insightface
 
 
-class FaceAnalyser:
+class FaceAnalyzer:
   
 	def __init__(self):
 		self.model = insightface.app.FaceAnalysis(name = 'buffalo_l', root='.assets')
