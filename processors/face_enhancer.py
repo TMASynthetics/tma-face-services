@@ -3,7 +3,7 @@ import threading
 import insightface
 import numpy
 from gfpgan.utils import GFPGANer
-from processors.face_analyzer import FaceAnalyzer
+from processors.face_detector import FaceDetector
 import os
 import gfpgan
 
@@ -11,7 +11,7 @@ class FaceEnhancer:
   
 	def __init__(self):
 		self.model = gfpgan.GFPGANer(model_path=os.path.abspath(os.path.join(os.path.dirname(__file__), '../.assets/models/GFPGANv1.4.pth')), upscale = 1)
-		self.face_analyzer = FaceAnalyzer()
+		self.face_analyzer = FaceDetector()
 
 	def run(self, frame):
 

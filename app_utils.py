@@ -9,19 +9,19 @@ def decode_frame(content):
     nparr = np.frombuffer(content, np.uint8)
     return cv2.imdecode(nparr, cv2.IMREAD_COLOR)
 
-def serialize_faces_analysis(analyzed_faces):
-    for analyzed_face in analyzed_faces:
-        analyzed_face.bbox = analyzed_face.bbox.tolist()
-        analyzed_face.kps = analyzed_face.kps.tolist()
-        analyzed_face.embedding = analyzed_face.embedding.tolist()
-        analyzed_face.embedding_normed = analyzed_face.normed_embedding.tolist()
-        analyzed_face.norm_embedding = float(analyzed_face.embedding_norm)
-        analyzed_face.landmark_3d_68 = analyzed_face.landmark_3d_68.tolist()
-        analyzed_face.pose = analyzed_face.pose.tolist()
-        analyzed_face.landmark_2d_106 = analyzed_face.landmark_2d_106.tolist()
-        analyzed_face.det_score = float(analyzed_face.det_score)
-        analyzed_face.age = int(analyzed_face.age)
-        analyzed_face.gender = int(analyzed_face.gender)
-        analyzed_face = analyzed_face.__dict__
+def serialize_faces_analysis(detected_faces):
+    for detected_face in detected_faces:
+        detected_face.bbox = detected_face.bbox.tolist()
+        detected_face.kps = detected_face.kps.tolist()
+        detected_face.embedding = detected_face.embedding.tolist()
+        detected_face.embedding_normed = detected_face.normed_embedding.tolist()
+        detected_face.norm_embedding = float(detected_face.embedding_norm)
+        detected_face.landmark_3d_68 = detected_face.landmark_3d_68.tolist()
+        detected_face.pose = detected_face.pose.tolist()
+        detected_face.landmark_2d_106 = detected_face.landmark_2d_106.tolist()
+        detected_face.det_score = float(detected_face.det_score)
+        detected_face.age = int(detected_face.age)
+        detected_face.gender = int(detected_face.gender)
+        detected_face = detected_face.__dict__
     
-    return {"analyzed_faces": [analyzed_face.__dict__ for analyzed_face in analyzed_faces]}
+    return [detected_face.__dict__ for detected_face in detected_faces]

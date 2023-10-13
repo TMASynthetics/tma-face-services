@@ -3,14 +3,14 @@ import threading
 import insightface
 import numpy
 
-from processors.face_analyzer import FaceAnalyzer
+from processors.face_detector import FaceDetector
 from processors.face_enhancer import FaceEnhancer
 
 class FaceSwapper:
   
 	def __init__(self):
 		self.model = insightface.model_zoo.get_model('.assets/models/inswapper_128.onnx', download=False, download_zip=False)
-		self.face_analyzer = FaceAnalyzer()
+		self.face_analyzer = FaceDetector()
 		self.face_enhancer = FaceEnhancer()
 
 	def run(self, img_source, img_target, enhance=False):

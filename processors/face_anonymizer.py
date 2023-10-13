@@ -1,29 +1,30 @@
 from typing import Any, Optional, List
 import cv2
 import numpy as np
-from processors.face_analyzer import FaceAnalyzer
+from processors.face_detector import FaceDetector
 
 
 class FaceAnonymizer:
   
 	def __init__(self):
-		self.face_analyser = FaceAnalyzer()
+		self.face_detector = FaceDetector()
 
-	def run(self, frame, method="blur", blur_factor=3.0, pixel_blocks=9):
+	def run(self, frame, face_ids=[], method="blur", blur_factor=3.0, pixel_blocks=9):
 
 		anonymised_frame = frame.copy()
-		analysed_faces = self.face_analyser.run(anonymised_frame)
+		detected_faces = self.face_detector.run(anonymised_frame)
 
 		if method not in ["blur", "pixelate"]:
 			method = "blur"
 
-		for face in analysed_faces:
-			cropped_face = anonymised_frame[int(face.bbox[1]):int(face.bbox[3]), int(face.bbox[0]):int(face.bbox[2])]
-			if method == "blur":
-				anonymised_face = self.anonymize_face_blured(cropped_face, blur_factor)
-			else:
-				anonymised_face = self.anonymize_face_pixelate(cropped_face, pixel_blocks)
-			anonymised_frame[int(face.bbox[1]):int(face.bbox[3]), int(face.bbox[0]):int(face.bbox[2])] = anonymised_face
+		for face in detected_faces:
+			if face.id in face_ids:
+				cropped_face = anonymised_frame[int(face.bbox[1]):int(face.bbox[3]), int(face.bbox[0]):int(face.bbox[2])]
+				if method == "blur":
+					anonymised_face = self.anonymize_face_blured(cropped_face, blur_factor)
+				else:
+					anonymised_face = self.anonymize_face_pixelate(cropped_face, pixel_blocks)
+				anonymised_frame[int(face.bbox[1]):int(face.bbox[3]), int(face.bbox[0]):int(face.bbox[2])] = anonymised_face
 		return anonymised_frame
 
 

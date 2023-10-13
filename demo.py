@@ -1,6 +1,6 @@
 import cv2
 
-from processors.face_analyzer import FaceAnalyzer
+from processors.face_detector import FaceDetector
 from processors.face_anonymizer import FaceAnonymizer
 from processors.face_enhancer import FaceEnhancer
 from processors.face_swapper import FaceSwapper
@@ -9,7 +9,7 @@ img_source = cv2.imread('tests/media/sal.png')
 img_target = cv2.imread('tests/media/joconde.jpg')
 img_group = cv2.imread('tests/media/group.jpg')
 
-face_analyzer = FaceAnalyzer()
+face_analyzer = FaceDetector()
 face_anonymiser = FaceAnonymizer()
 face_swapper = FaceSwapper()
 face_enhancer = FaceEnhancer()
