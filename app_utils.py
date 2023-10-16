@@ -25,3 +25,12 @@ def serialize_faces_analysis(detected_faces):
         detected_face = detected_face.__dict__
     
     return [detected_face.__dict__ for detected_face in detected_faces]
+
+def get_optimal_font_scale(text, width):
+    for scale in reversed(range(0, 60, 1)):
+        ratio = 12
+        textSize = cv2.getTextSize(text, fontFace=cv2.FONT_HERSHEY_DUPLEX, fontScale=scale/ratio, thickness=1)
+        new_width = textSize[0][0]
+        if (new_width <= width):
+            return scale/ratio, textSize[0][1]
+    return 1, 60

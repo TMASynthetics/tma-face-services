@@ -1,37 +1,35 @@
 import base64
-from fastapi import FastAPI, HTTPException, Response
+from fastapi import FastAPI, HTTPException, Query, Response
 from pydantic import BaseModel
 import cv2
 import os 
 import numpy as np
-from typing import Annotated
+from typing import Annotated, List
 from fastapi import FastAPI, File, UploadFile
 import uvicorn
-from app_utils import decode_frame, encode_frame_to_bytes, serialize_faces_analysis
+from app_utils import decode_frame, encode_frame_to_bytes, get_optimal_font_scale, serialize_faces_analysis
 from processors.face_detector import FaceDetector
 from processors.face_anonymizer import FaceAnonymizer
-# from processors.face_enhancer import FaceEnhancer
-# from processors.face_swapper import FaceSwapper
+from processors.face_enhancer import FaceEnhancer
+from processors.face_swapper import FaceSwapper
 
 
 tags_metadata = [
     {
-        "name": "Face Services",
-        "description": "Face Services",
-        # "externalDocs": {
-        #     "description": "Items external docs",
-        #     "url": "https://fastapi.tiangolo.com/",
-        # },
+        "name": "Face Services API",
+        "description": "This API provides human face processing capabilities.",
+        "externalDocs": {
+            "description": "Documentation",
+            "url": "https://jwsite.sharepoint.com/:f:/r/sites/WHQ-MEPS-TMASyntheticMedia-Team/Shared%20Documents/Products/Face%20Services%20API?csf=1&web=1&e=IVOU8p",
+        },
     },
 ]
 app = FastAPI(
-    title="TMA - Synthetic Media Team - Face Services",
+    title="TMA - Synthetic Media Team - Face Services API",
     description="",
     version="0.0.1",
-    # terms_of_service="http://example.com/terms/",
     contact={
         "name": "Thierry SAMMOUR",
-        # "url": "http://x-force.example.com/contact/",
         "email": "tsammour@bethel.jw.org",
     },
     openapi_tags=tags_metadata
@@ -39,24 +37,17 @@ app = FastAPI(
 
 face_analyzer = FaceDetector()
 face_anonymiser = FaceAnonymizer()
-# face_swapper = FaceSwapper()
-# face_enhancer = FaceEnhancer()
+face_swapper = FaceSwapper()
+face_enhancer = FaceEnhancer()
 
 
 IMAGE_SIZE_LIMIT_MB = 1
 VIDEO_SIZE_LIMIT_MB = 1024
 IMAGE_MIME_TYPES = ["image/jpeg", "image/png", "image/gif", "image/bmp"]
-VIDEO_MIME_TYPES = ["video/x-msvideo", "video/mpeg", "video/ogg", "video/webm", "video/3gpp", "video/3gpp2"]
+VIDEO_MIME_TYPES = ["video/x-msvideo", "video/mp4", "video/mpeg", "video/ogg", "video/webm", "video/3gpp", "video/3gpp2"]
 
 
-class Item(BaseModel):
-    name: str
-    description: str | None = None
-    price: float
-    tax: float | None = None
-
-
-@app.post("/face/detect", tags=["Face Services"])
+@app.post("/testing/detect", tags=["Testing"])
 async def detect(input_file: UploadFile):
 
     # Get the file size (in bytes)
@@ -67,49 +58,139 @@ async def detect(input_file: UploadFile):
     await input_file.seek(0)
 
     # check the content type (MIME type)
-    file_type = None
     file_content_type = input_file.content_type
     if file_content_type in IMAGE_MIME_TYPES:
-        file_type = "image"
         if file_size > IMAGE_SIZE_LIMIT_MB * 1024 * 1024:
             # more than IMAGE_SIZE_LIMIT_MB MB
             raise HTTPException(status_code=400, detail="Image too large, maximum image size is {}MB".format(IMAGE_SIZE_LIMIT_MB))
-    elif file_content_type in VIDEO_MIME_TYPES:
-        file_type = "video"
-        if file_size > VIDEO_SIZE_LIMIT_MB * 1024 * 1024:
-            # more than VIDEO_SIZE_LIMIT_MB MB
-            raise HTTPException(status_code=400, detail="Video too large, maximum image size is {}MB".format(IMAGE_SIZE_LIMIT_MB))
     else:
         raise HTTPException(status_code=400, detail="Invalid file type")
 
     # Get the file
     file_content = await input_file.read()
-    response = {"filename": input_file.filename, 
-                "media_type": file_type,
-                "detected_faces": serialize_faces_analysis(face_analyzer.run(decode_frame(file_content)))}
-    return response
+
+    frame = decode_frame(file_content)
+    detected_faces = face_analyzer.run(frame)
+
+    for detected_face in detected_faces:
+        cv2.rectangle(frame,(int(detected_face.bbox[0]), int(detected_face.bbox[1])), (int(detected_face.bbox[2]), int(detected_face.bbox[3])), (0, 255, 0), 2)
+        for keypoint in detected_face.kps:
+            cv2.circle(frame, (int(keypoint[0]), int(keypoint[1])), 3, (255, 0, 0), -1)
+        for keypoint in detected_face.landmark_2d_106:
+            cv2.circle(frame, (int(keypoint[0]), int(keypoint[1])), 3, (0, 0, 255), -1)
+        for keypoint in detected_face.landmark_3d_68:
+            cv2.circle(frame, (int(keypoint[0]), int(keypoint[1])), 3, (0, 255, 255), -1)
+
+        bbox_width = int(detected_face.bbox[2]) - int(detected_face.bbox[0])
+        bbox_height = int(detected_face.bbox[3]) - int(detected_face.bbox[1])
+
+        text1 = 'Face ' + str(detected_face.id)
+        text2 = 'Sex:' + str(detected_face.sex) + ' Age:' + str(detected_face.age)
+
+        font_scale, font_height = get_optimal_font_scale(text2, bbox_width)
+        cv2.putText(frame, text2, (int(detected_face.bbox[0]), int(detected_face.bbox[1]-bbox_height*0.01)), 0, font_scale, (255, 255, 255), 1)
+        cv2.putText(frame, text1, (int(detected_face.bbox[0]), int(detected_face.bbox[1]-bbox_height*0.01-font_height)), 0, font_scale, (255, 255, 255), 1)
+
+    return Response(content=encode_frame_to_bytes(frame), media_type="image/png")
 
 
-@app.post("/face/anonymize")
-async def anonymize(image_file: UploadFile):
-    image_content = await image_file.read()
-    anonymised_face = face_anonymiser.run(decode_frame(image_content), face_ids=[1])
+@app.post("/testing/anonymize", tags=["Testing"])
+async def anonymize(input_file: UploadFile, 
+                    face_ids: List[int] | None = Query(None),
+                    method: str | None = Query(default='blur', enum=["blur", "pixelate"]), 
+                    blur_factor: float = Query(default=3.0, gt=1.0, le=100), 
+                    pixel_blocks: int = Query(default=10, ge=1, le=100)):
+
+    # Get the file size (in bytes)
+    input_file.file.seek(0, 2)
+    file_size = input_file.file.tell()
+
+    # move the cursor back to the beginning
+    await input_file.seek(0)
+
+    # check the content type (MIME type)
+    file_content_type = input_file.content_type
+    if file_content_type in IMAGE_MIME_TYPES:
+        if file_size > IMAGE_SIZE_LIMIT_MB * 1024 * 1024:
+            # more than IMAGE_SIZE_LIMIT_MB MB
+            raise HTTPException(status_code=400, detail="Image too large, maximum image size is {}MB".format(IMAGE_SIZE_LIMIT_MB))
+    else:
+        raise HTTPException(status_code=400, detail="Invalid file type")
+
+    # Get the file
+    file_content = await input_file.read()
+
+    anonymised_face = face_anonymiser.run(decode_frame(file_content), face_ids=face_ids, method=method, blur_factor=blur_factor, pixel_blocks=pixel_blocks)
     return Response(content=encode_frame_to_bytes(anonymised_face), media_type="image/png")
 
 
-# @app.post("/face/enhance")
-# async def enhance(image_file: UploadFile):
-#     image_content = await image_file.read()
-#     enhanced_face = face_enhancer.run(decode_frame(image_content))
-#     return Response(content=encode_frame_to_bytes(enhanced_face), media_type="image/png")
+@app.post("/testing/swap", tags=["Testing"])
+async def swap(source_image_file: UploadFile, target_image_file: UploadFile, enhance: bool = Query(default=False, enum=[False, True])):
+
+    # Get the file size (in bytes)
+    target_image_file.file.seek(0, 2)
+    file_size = target_image_file.file.tell()
+    # move the cursor back to the beginning
+    await target_image_file.seek(0)
+    # check the content type (MIME type)
+    file_content_type = target_image_file.content_type
+    if file_content_type in IMAGE_MIME_TYPES:
+        if file_size > IMAGE_SIZE_LIMIT_MB * 1024 * 1024:
+            # more than IMAGE_SIZE_LIMIT_MB MB
+            raise HTTPException(status_code=400, detail="Target image too large, maximum image size is {}MB".format(IMAGE_SIZE_LIMIT_MB))
+    else:
+        raise HTTPException(status_code=400, detail="Invalid target file type")
+    # Get the file
+    target_content = await target_image_file.read()
 
 
-# @app.post("/face/swap")
-# async def swap(source_image_file: UploadFile, target_image_file: UploadFile):
-#     source_content = await source_image_file.read()
-#     target_centent = await target_image_file.read()
-#     swapped_face = face_swapper.run(decode_frame(source_content), decode_frame(target_centent))
-#     return Response(content=encode_frame_to_bytes(swapped_face), media_type="image/png")
+    # Get the file size (in bytes)
+    source_image_file.file.seek(0, 2)
+    file_size = source_image_file.file.tell()
+    # move the cursor back to the beginning
+    await source_image_file.seek(0)
+    # check the content type (MIME type)
+    file_content_type = source_image_file.content_type
+    if file_content_type in IMAGE_MIME_TYPES:
+        if file_size > IMAGE_SIZE_LIMIT_MB * 1024 * 1024:
+            # more than IMAGE_SIZE_LIMIT_MB MB
+            raise HTTPException(status_code=400, detail="Source image too large, maximum image size is {}MB".format(IMAGE_SIZE_LIMIT_MB))
+    else:
+        raise HTTPException(status_code=400, detail="Invalid source file type")
+    # Get the file
+    source_content = await source_image_file.read()
+   
+
+    swapped_face = face_swapper.run(decode_frame(source_content), decode_frame(target_content), enhance=enhance)
+    return Response(content=encode_frame_to_bytes(swapped_face), media_type="image/png")
+
+
+@app.post("/testing/enhance", tags=["Testing"])
+async def enhance(input_file: UploadFile):
+
+    # Get the file size (in bytes)
+    input_file.file.seek(0, 2)
+    file_size = input_file.file.tell()
+
+    # move the cursor back to the beginning
+    await input_file.seek(0)
+
+    # check the content type (MIME type)
+    file_content_type = input_file.content_type
+    if file_content_type in IMAGE_MIME_TYPES:
+        if file_size > IMAGE_SIZE_LIMIT_MB * 1024 * 1024:
+            # more than IMAGE_SIZE_LIMIT_MB MB
+            raise HTTPException(status_code=400, detail="Image too large, maximum image size is {}MB".format(IMAGE_SIZE_LIMIT_MB))
+    else:
+        raise HTTPException(status_code=400, detail="Invalid file type")
+
+    # Get the file
+    file_content = await input_file.read()
+    enhanced_face = face_enhancer.run(decode_frame(file_content))
+    return Response(content=encode_frame_to_bytes(enhanced_face), media_type="image/png")
+
+
+
 
 
 if __name__ == '__main__':

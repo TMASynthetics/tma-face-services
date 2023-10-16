@@ -16,9 +16,11 @@ class FaceAnonymizer:
 
 		if method not in ["blur", "pixelate"]:
 			method = "blur"
+		if face_ids is None:
+			face_ids=[]
 
 		for face in detected_faces:
-			if face.id in face_ids:
+			if face.id in face_ids or len(face_ids)==0 :
 				cropped_face = anonymised_frame[int(face.bbox[1]):int(face.bbox[3]), int(face.bbox[0]):int(face.bbox[2])]
 				if method == "blur":
 					anonymised_face = self.anonymize_face_blured(cropped_face, blur_factor)
