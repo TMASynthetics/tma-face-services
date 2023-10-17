@@ -21,9 +21,7 @@ COPY ./requirements.txt /code/requirements.txt
 RUN pip install --no-cache-dir --upgrade -r /code/requirements.txt
 
 # 
-COPY ./app /code/app
-COPY ./.assets /code/.assets
-COPY ./images /code/images
-
+COPY ./face_services /code/face_services
+COPY ./gfpgan /code/gfpgan
 # 
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "80"]
+CMD ["uvicorn", "face_services.app:app", "--host", "0.0.0.0", "--port", "80"]

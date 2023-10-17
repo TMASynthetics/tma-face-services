@@ -5,7 +5,7 @@ import insightface
 class FaceDetector:
   
 	def __init__(self):
-		self.model = insightface.app.FaceAnalysis(name = 'buffalo_l', root='.assets')
+		self.model = insightface.app.FaceAnalysis(name = 'buffalo_l', root='face_services/.assets')
 		self.model.prepare(ctx_id = 0)
 
 	def run(self, frame):
@@ -16,9 +16,12 @@ class FaceDetector:
 			detected_face.id = idx + 1
 		return detected_faces
 
-
-
-
+	@staticmethod
+	def get_face_by_id(detected_faces, id):
+		for detected_face in detected_faces:
+			if detected_face.id == id:
+				return detected_face
+		return None
 
 
 

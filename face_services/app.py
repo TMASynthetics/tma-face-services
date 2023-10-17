@@ -41,7 +41,7 @@ face_swapper = FaceSwapper()
 face_enhancer = FaceEnhancer()
 
 
-IMAGE_SIZE_LIMIT_MB = 1
+IMAGE_SIZE_LIMIT_MB = 10
 VIDEO_SIZE_LIMIT_MB = 1024
 IMAGE_MIME_TYPES = ["image/jpeg", "image/png", "image/gif", "image/bmp"]
 VIDEO_MIME_TYPES = ["video/x-msvideo", "video/mp4", "video/mpeg", "video/ogg", "video/webm", "video/3gpp", "video/3gpp2"]
@@ -96,10 +96,10 @@ async def detect(input_file: UploadFile):
 
 @app.post("/testing/anonymize", tags=["Testing"])
 async def anonymize(input_file: UploadFile, 
-                    face_ids: List[int] | None = Query(None),
-                    method: str | None = Query(default='blur', enum=["blur", "pixelate"]), 
-                    blur_factor: float = Query(default=3.0, gt=1.0, le=100), 
-                    pixel_blocks: int = Query(default=10, ge=1, le=100)):
+                    face_ids: List[int] = Query(description='The ids of the faces to anonymise. Use the detect service to identify the faces.'),
+                    method: str | None = Query(default='blur', enum=["blur", "pixelate"], description='The method used to anonymise faces.'), 
+                    blur_factor: float = Query(default=3.0, gt=1.0, le=100, description='The blur factor if the anonymisation is perfomed using blurring. Higher values results in less blur.'), 
+                    pixel_blocks: int = Query(default=10, ge=1, le=100, description='The number of pixel blocks if the anonymisation is perfomed using pixelisation. Higher values results in finer face.')):
 
     # Get the file size (in bytes)
     input_file.file.seek(0, 2)
@@ -125,7 +125,10 @@ async def anonymize(input_file: UploadFile,
 
 
 @app.post("/testing/swap", tags=["Testing"])
-async def swap(source_image_file: UploadFile, target_image_file: UploadFile, enhance: bool = Query(default=False, enum=[False, True])):
+async def swap(source_image_file: UploadFile, target_image_file: UploadFile, 
+               source_face_id: int = Query(default=1, ge=1, le=100, description='The id of the face in the source frame use to replace the target face(s). Use the detect service to identify the faces.'),
+               target_face_ids: List[int] = Query(None, description='The ids of the faces in the target frame to swap by the source face. Use the detect service to identify the faces.'),
+               enhance: bool = Query(default=False, enum=[False, True], description='Activate in order to enhance the quality of the swapped face(s).')):
 
     # Get the file size (in bytes)
     target_image_file.file.seek(0, 2)
@@ -159,9 +162,13 @@ async def swap(source_image_file: UploadFile, target_image_file: UploadFile, enh
         raise HTTPException(status_code=400, detail="Invalid source file type")
     # Get the file
     source_content = await source_image_file.read()
-   
 
-    swapped_face = face_swapper.run(decode_frame(source_content), decode_frame(target_content), enhance=enhance)
+    swapped_face = face_swapper.run(decode_frame(source_content), 
+                                    decode_frame(target_content), 
+                                    enhance=enhance, 
+                                    target_face_ids=target_face_ids, 
+                                    source_face_id=source_face_id)
+    
     return Response(content=encode_frame_to_bytes(swapped_face), media_type="image/png")
 
 
@@ -188,9 +195,6 @@ async def enhance(input_file: UploadFile):
     file_content = await input_file.read()
     enhanced_face = face_enhancer.run(decode_frame(file_content))
     return Response(content=encode_frame_to_bytes(enhanced_face), media_type="image/png")
-
-
-
 
 
 if __name__ == '__main__':

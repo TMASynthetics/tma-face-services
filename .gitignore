@@ -159,3 +159,4 @@ tests/
 .venv/
 
 docker_cmd
+.DS_Store
