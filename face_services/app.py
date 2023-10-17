@@ -96,7 +96,7 @@ async def detect(input_file: UploadFile):
 
 @app.post("/testing/anonymize", tags=["Testing"])
 async def anonymize(input_file: UploadFile, 
-                    face_ids: List[int] = Query(description='The ids of the faces to anonymise. Use the detect service to identify the faces.'),
+                    face_ids: List[int] = Query(None, description='The ids of the faces to anonymise. Use the detect service to identify the faces.'),
                     method: str | None = Query(default='blur', enum=["blur", "pixelate"], description='The method used to anonymise faces.'), 
                     blur_factor: float = Query(default=3.0, gt=1.0, le=100, description='The blur factor if the anonymisation is perfomed using blurring. Higher values results in less blur.'), 
                     pixel_blocks: int = Query(default=10, ge=1, le=100, description='The number of pixel blocks if the anonymisation is perfomed using pixelisation. Higher values results in finer face.')):
@@ -198,4 +198,4 @@ async def enhance(input_file: UploadFile):
 
 
 if __name__ == '__main__':
-    uvicorn.run(app, host='0.0.0.0', port='8080')
+    uvicorn.run(app, host='0.0.0.0', port=8080)
