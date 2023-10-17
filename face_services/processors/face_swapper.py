@@ -3,8 +3,8 @@ import threading
 import insightface
 import numpy
 
-from processors.face_detector import FaceDetector
-from processors.face_enhancer import FaceEnhancer
+from ..processors.face_detector import FaceDetector
+from ..processors.face_enhancer import FaceEnhancer
 
 class FaceSwapper:
   

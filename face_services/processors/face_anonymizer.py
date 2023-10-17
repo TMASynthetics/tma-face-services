@@ -1,7 +1,7 @@
 from typing import Any, Optional, List
 import cv2
 import numpy as np
-from processors.face_detector import FaceDetector
+from ..processors.face_detector import FaceDetector
 
 
 class FaceAnonymizer:

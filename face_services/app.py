@@ -7,11 +7,11 @@ import numpy as np
 from typing import Annotated, List
 from fastapi import FastAPI, File, UploadFile
 import uvicorn
-from app_utils import decode_frame, encode_frame_to_bytes, get_optimal_font_scale, serialize_faces_analysis
-from processors.face_detector import FaceDetector
-from processors.face_anonymizer import FaceAnonymizer
-from processors.face_enhancer import FaceEnhancer
-from processors.face_swapper import FaceSwapper
+from face_services.app_utils import decode_frame, encode_frame_to_bytes, get_optimal_font_scale, serialize_faces_analysis
+from face_services.processors.face_detector import FaceDetector
+from face_services.processors.face_anonymizer import FaceAnonymizer
+from face_services.processors.face_enhancer import FaceEnhancer
+from face_services.processors.face_swapper import FaceSwapper
 
 
 tags_metadata = [

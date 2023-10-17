@@ -3,7 +3,7 @@ import threading
 import insightface
 import numpy
 from gfpgan.utils import GFPGANer
-from processors.face_detector import FaceDetector
+from ..processors.face_detector import FaceDetector
 import os
 import gfpgan
 
