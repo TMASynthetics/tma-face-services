@@ -10,9 +10,9 @@ import uvicorn
 from face_services.app_utils import decode_frame, encode_frame_to_bytes, get_optimal_font_scale, serialize_faces_analysis
 from face_services.processors.face_detector import FaceDetector
 from face_services.processors.face_anonymizer import FaceAnonymizer
-from face_services.processors.face_enhancer import FaceEnhancer
 from face_services.processors.face_swapper import FaceSwapper
-
+import logging
+logging.basicConfig(format='%(asctime)s - %(message)s', level=logging.INFO)
 
 tags_metadata = [
     {
@@ -38,8 +38,6 @@ app = FastAPI(
 face_analyzer = FaceDetector()
 face_anonymiser = FaceAnonymizer()
 face_swapper = FaceSwapper()
-face_enhancer = FaceEnhancer()
-
 
 IMAGE_SIZE_LIMIT_MB = 10
 VIDEO_SIZE_LIMIT_MB = 1024
@@ -127,8 +125,7 @@ async def anonymize(input_file: UploadFile,
 @app.post("/testing/swap", tags=["Testing"])
 async def swap(source_image_file: UploadFile, target_image_file: UploadFile, 
                source_face_id: int = Query(default=1, ge=1, le=100, description='The id of the face in the source frame use to replace the target face(s). Use the detect service to identify the faces.'),
-               target_face_ids: List[int] = Query(None, description='The ids of the faces in the target frame to swap by the source face. Use the detect service to identify the faces.'),
-               enhance: bool = Query(default=False, enum=[False, True], description='Activate in order to enhance the quality of the swapped face(s).')):
+               target_face_ids: List[int] = Query(None, description='The ids of the faces in the target frame to swap by the source face. Use the detect service to identify the faces.')):
 
     # Get the file size (in bytes)
     target_image_file.file.seek(0, 2)
@@ -165,37 +162,11 @@ async def swap(source_image_file: UploadFile, target_image_file: UploadFile,
 
     swapped_face = face_swapper.run(decode_frame(source_content), 
                                     decode_frame(target_content), 
-                                    enhance=enhance, 
                                     target_face_ids=target_face_ids, 
                                     source_face_id=source_face_id)
     
     return Response(content=encode_frame_to_bytes(swapped_face), media_type="image/png")
 
 
-@app.post("/testing/enhance", tags=["Testing"])
-async def enhance(input_file: UploadFile):
-
-    # Get the file size (in bytes)
-    input_file.file.seek(0, 2)
-    file_size = input_file.file.tell()
-
-    # move the cursor back to the beginning
-    await input_file.seek(0)
-
-    # check the content type (MIME type)
-    file_content_type = input_file.content_type
-    if file_content_type in IMAGE_MIME_TYPES:
-        if file_size > IMAGE_SIZE_LIMIT_MB * 1024 * 1024:
-            # more than IMAGE_SIZE_LIMIT_MB MB
-            raise HTTPException(status_code=400, detail="Image too large, maximum image size is {}MB".format(IMAGE_SIZE_LIMIT_MB))
-    else:
-        raise HTTPException(status_code=400, detail="Invalid file type")
-
-    # Get the file
-    file_content = await input_file.read()
-    enhanced_face = face_enhancer.run(decode_frame(file_content))
-    return Response(content=encode_frame_to_bytes(enhanced_face), media_type="image/png")
-
-
 if __name__ == '__main__':
-    uvicorn.run(app, host='0.0.0.0', port=8080)
+    uvicorn.run(app, host='0.0.0.0', port=80)

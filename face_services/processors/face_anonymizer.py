@@ -1,3 +1,4 @@
+import logging
 from typing import Any, Optional, List
 import cv2
 import numpy as np
@@ -7,10 +8,11 @@ from ..processors.face_detector import FaceDetector
 class FaceAnonymizer:
   
 	def __init__(self):
+		logging.info('FaceAnonymizer - Initialize')
 		self.face_detector = FaceDetector()
 
 	def run(self, frame, face_ids=[], method="blur", blur_factor=3.0, pixel_blocks=9):
-
+		logging.info('FaceAnonymizer - Run')
 		anonymised_frame = frame.copy()
 		detected_faces = self.face_detector.run(anonymised_frame)
 
@@ -31,6 +33,7 @@ class FaceAnonymizer:
 
 
 	def anonymize_face_blured(self, cropped_face, blur_factor):
+		logging.info('FaceAnonymizer - Blurring face')
 		(h, w) = cropped_face.shape[:2]
 		kW = int(w / blur_factor)
 		kH = int(h / blur_factor)
@@ -42,6 +45,7 @@ class FaceAnonymizer:
 
 
 	def anonymize_face_pixelate(self, cropped_face, pixel_blocks):
+		logging.info('FaceAnonymizer - Pixelizing face')
 		(h, w) = cropped_face.shape[:2]
 		xSteps = np.linspace(0, w, pixel_blocks + 1, dtype="int")
 		ySteps = np.linspace(0, h, pixel_blocks + 1, dtype="int")

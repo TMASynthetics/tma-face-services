@@ -1,6 +1,7 @@
 import numpy as np
 import cv2
 
+
 def encode_frame_to_bytes(frame):
     _, encoded_img = cv2.imencode('.PNG', frame)
     return encoded_img.tobytes()
