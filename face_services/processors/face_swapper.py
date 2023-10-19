@@ -11,10 +11,10 @@ class FaceSwapper:
   
 	def __init__(self):
 		logging.info('FaceSwapper - Initialize')
-		self.model = insightface.model_zoo.get_model('face_services/.assets/models/inswapper_128.onnx', download=False, download_zip=False)
+		self.model = insightface.model_zoo.get_model('face_services/.assets/face_swapper/inswapper_128.onnx', download=False, download_zip=False)
 		self.face_analyzer = FaceDetector()
 		self.face_enhancer = FaceEnhancer()
-		
+
 	def run(self, img_source, img_target, source_face_id=1, target_face_ids=[], enhance=False):
 		logging.info('FaceSwapper - Run')
 		swapped_frame = img_target.copy()
