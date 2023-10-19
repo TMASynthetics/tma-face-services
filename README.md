@@ -1,4 +1,4 @@
-Face Services
+Face Services API
 ==========
 > State-of-the-art human face processing.
 > - [x] Face detection and analysis
