@@ -1,14 +1,26 @@
-# tma-face-services - Face Services API
-
-This API provides human face processing capabilities.
-
-[!NOTE]
-Highlights information that users should take into account, even when skimming.
+Face Services
+==========
+> State-of-the-art human face processing capabilities.
 
 
+Installation
+------------
+Please use Python 3.10.
 
-## Docker
-'''
+
+
+
+Usage
+-----
+
+Run the command:
+
+
+
+Docker
+-----
+
+```
 docker build . -t face_services
 docker run -d --name face_services_container -p 80:80 face_services
-'''
+```
