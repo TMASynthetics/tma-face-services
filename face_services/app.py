@@ -27,7 +27,7 @@ tags_metadata = [
 app = FastAPI(
     title="TMA - Synthetic Media Team - Face Services API",
     description="",
-    version="0.0.1",
+    version="0.1.0",
     contact={
         "name": "Thierry SAMMOUR",
         "email": "tsammour@bethel.jw.org",
