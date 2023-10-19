@@ -4,7 +4,7 @@ Face Services API
 > - [x] Face detection and analysis
 > - [x] Face anonymization
 > - [x] Face swapping
-> - [x] Face enhancement
+> - [ ] Face enhancement
 > - [ ] Face reenactment
 > - [ ] Visual dubbing
 
