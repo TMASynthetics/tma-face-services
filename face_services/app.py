@@ -30,7 +30,7 @@ tags_metadata = [
 app = FastAPI(
     title="TMA - Synthetic Media Team - Face Services API",
     description="",
-    version="0.2.0",
+    version="0.1.1",
     contact={
         "name": "Thierry SAMMOUR",
         "email": "tsammour@bethel.jw.org",
@@ -41,6 +41,7 @@ app = FastAPI(
 face_analyzer = FaceDetector()
 face_anonymiser = FaceAnonymizer()
 face_swapper = FaceSwapper()
+face_enhancer = FaceEnhancer()
 
 IMAGE_SIZE_LIMIT_MB = 10
 VIDEO_SIZE_LIMIT_MB = 1024
