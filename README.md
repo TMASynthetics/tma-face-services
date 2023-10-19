@@ -4,7 +4,7 @@ Face Services
 > - [x] Face detection and analysis
 > - [x] Face anonymization
 > - [x] Face swapping
-> - [ ] Face enhancement
+> - [x] Face enhancement
 > - [ ] Face reenactment
 > - [ ] Visual dubbing
 
@@ -20,8 +20,7 @@ Please use Python 3.10.
 pip install -r requirements.txt
 ```
 2. Download the pretrained models from [here](https://jwsite.sharepoint.com/:f:/r/sites/WHQ-MEPS-TMASyntheticMedia-Team/Shared%20Documents/Products/Face%20Services%20API/models?csf=1&web=1&e=ea1zHa).
-- Unzip and place the _**.assets**_ folder in the _**face_services**_ folder
-- Unizip and place the _**gfpgan**_ folder at the root of the project
+Unzip and place the _**.assets**_ folder in the _**face_services**_ folder
 
 Usage
 -----

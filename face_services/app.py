@@ -177,7 +177,8 @@ async def swap(source_image_file: UploadFile, target_image_file: UploadFile,
     return Response(content=encode_frame_to_bytes(swapped_face), media_type="image/png")
 
 @app.post("/testing/enhance", tags=["Testing"])
-async def enhance(input_file: UploadFile):
+async def enhance(input_file: UploadFile,
+                  blend_percentage: int = Query(default=100, ge=0, le=100, description='The ratio between the original face and the enhanced one. Higher values results in finer face.')):
 
     # Get the file size (in bytes)
     input_file.file.seek(0, 2)
@@ -197,7 +198,7 @@ async def enhance(input_file: UploadFile):
 
     # Get the file
     file_content = await input_file.read()
-    enhanced_face = face_enhancer.run(decode_frame(file_content))
+    enhanced_face = face_enhancer.run(decode_frame(file_content), blend_percentage=blend_percentage)
     return Response(content=encode_frame_to_bytes(enhanced_face), media_type="image/png")
 
 
