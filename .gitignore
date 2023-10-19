@@ -166,3 +166,5 @@ docker_cmd
 demo.py
 .assets.zip
 gfpgan.zip
+.DS_Store
+.DS_Store
