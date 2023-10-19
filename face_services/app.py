@@ -49,7 +49,7 @@ IMAGE_MIME_TYPES = ["image/jpeg", "image/png", "image/gif", "image/bmp"]
 VIDEO_MIME_TYPES = ["video/x-msvideo", "video/mp4", "video/mpeg", "video/ogg", "video/webm", "video/3gpp", "video/3gpp2"]
 
 @app.route('/', include_in_schema=False)
-def app_redirect():
+def app_redirect(_):
     return RedirectResponse(url='/docs')
 
 @app.post("/testing/detect", tags=["Testing"])
