@@ -1,5 +1,6 @@
 import base64
 from fastapi import FastAPI, HTTPException, Query, Response
+from fastapi.responses import RedirectResponse
 from pydantic import BaseModel
 import cv2
 import os 
@@ -44,6 +45,9 @@ VIDEO_SIZE_LIMIT_MB = 1024
 IMAGE_MIME_TYPES = ["image/jpeg", "image/png", "image/gif", "image/bmp"]
 VIDEO_MIME_TYPES = ["video/x-msvideo", "video/mp4", "video/mpeg", "video/ogg", "video/webm", "video/3gpp", "video/3gpp2"]
 
+@app.route('/', include_in_schema=False)
+def app_redirect():
+    return RedirectResponse(url='/docs')
 
 @app.post("/testing/detect", tags=["Testing"])
 async def detect(input_file: UploadFile):
