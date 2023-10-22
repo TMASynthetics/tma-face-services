@@ -8,11 +8,6 @@ import cv2
 
 FACE_ENHANCER_MODELS =\
 {
-	'codeformer':
-	{
-		'url': 'https://github.com/facefusion/facefusion-assets/releases/download/models/codeformer.onnx',
-		'path': resolve_relative_path('../.assets/face_enhancer/codeformer.onnx')
-	},
 	'gfpgan_1.2':
 	{
 		'url': 'https://github.com/facefusion/facefusion-assets/releases/download/models/GFPGANv1.2.onnx',
@@ -32,26 +27,56 @@ FACE_ENHANCER_MODELS =\
 	{
 		'url': 'https://github.com/facefusion/facefusion-assets/releases/download/models/GPEN-BFR-512.onnx',
 		'path': resolve_relative_path('../.assets/face_enhancer/GPEN-BFR-512.onnx')
+	},
+	'codeformer':
+	{
+		'url': 'https://github.com/facefusion/facefusion-assets/releases/download/models/codeformer.onnx',
+		'path': resolve_relative_path('../.assets/face_enhancer/codeformer.onnx')
 	}
 }
 
 class FaceEnhancer:
   
 	def __init__(self, model='gfpgan_1.4'):
-		logging.info('FaceEnhancer - Initialize')
-		self.model = onnxruntime.InferenceSession(FACE_ENHANCER_MODELS[model]['path'], providers = ['CPUExecutionProvider'])
+		if model is not None and model in self.get_available_models():
+			self.current_model_name = model
+		else:
+			self.current_model_name = self.get_available_models()[0]
+
+		logging.info('FaceEnhancer - Initialize with model : ', self.current_model_name)
+		self.model = onnxruntime.InferenceSession(FACE_ENHANCER_MODELS[self.current_model_name]['path'], providers = ['CPUExecutionProvider'])
 		self.face_analyzer = FaceDetector()
 
-	def run(self, frame, blend_percentage: int=100):
+	@staticmethod
+	def get_available_models():
+		logging.info('FaceEnhancer - Get available models')
+		return list(FACE_ENHANCER_MODELS.keys())
+
+	def check_current_model(self, model):
+		logging.info('FaceEnhancer - Check current model')
+		if model != self.current_model_name:
+			logging.info('FaceEnhancer - Initialize with model : ', self.current_model_name)
+			self.current_model_name = model
+			self.model = onnxruntime.InferenceSession(FACE_ENHANCER_MODELS[self.current_model_name]['path'], providers = ['CPUExecutionProvider'])
+
+	def run(self, frame, model: str=None, blend_percentage: int=100):
 		logging.info('FaceEnhancer - Run')
+		
 		enhanced_frame = frame.copy()
 		analysed_faces = self.face_analyzer.run(frame)
+
+		if model is not None and model in self.get_available_models():
+			self.check_current_model(model)
 
 		for face in analysed_faces:
 			crop_frame, affine_matrix = self.warp_face(face, enhanced_frame)
 			crop_frame = self.prepare_crop_frame(crop_frame)
 			frame_processor_inputs = {}
-			frame_processor_inputs['input'] = crop_frame
+			for frame_processor_input in self.model.get_inputs():
+				if frame_processor_input.name == 'input':
+					frame_processor_inputs[frame_processor_input.name] = crop_frame
+				if frame_processor_input.name == 'weight':
+					frame_processor_inputs[frame_processor_input.name] = numpy.array([ 1 ], dtype = numpy.double)
 			crop_frame = self.model.run(None, frame_processor_inputs)[0][0]
 			crop_frame = self.normalize_crop_frame(crop_frame)
 			paste_frame = self.paste_back(enhanced_frame, crop_frame, affine_matrix)

@@ -98,7 +98,6 @@ async def detect(input_file: UploadFile):
 
     return Response(content=encode_frame_to_bytes(frame), media_type="image/png")
 
-
 @app.post("/testing/anonymize", tags=["Testing"])
 async def anonymize(input_file: UploadFile, 
                     face_ids: List[int] = Query(None, description='The ids of the faces to anonymise. Use the detect service to identify the faces.'),
@@ -127,7 +126,6 @@ async def anonymize(input_file: UploadFile,
 
     anonymised_face = face_anonymiser.run(decode_frame(file_content), face_ids=face_ids, method=method, blur_factor=blur_factor, pixel_blocks=pixel_blocks)
     return Response(content=encode_frame_to_bytes(anonymised_face), media_type="image/png")
-
 
 @app.post("/testing/swap", tags=["Testing"])
 async def swap(source_image_file: UploadFile, target_image_file: UploadFile, 
@@ -178,6 +176,7 @@ async def swap(source_image_file: UploadFile, target_image_file: UploadFile,
 
 @app.post("/testing/enhance", tags=["Testing"])
 async def enhance(input_file: UploadFile,
+                  face_enhancer_model: str = Query(default=FaceEnhancer().get_available_models()[0], enum=FaceEnhancer().get_available_models(), description='The model to use for performing the face enhancement.'),
                   blend_percentage: int = Query(default=100, ge=0, le=100, description='The ratio between the original face and the enhanced one. Higher values results in finer face.')):
 
     # Get the file size (in bytes)
@@ -198,7 +197,7 @@ async def enhance(input_file: UploadFile,
 
     # Get the file
     file_content = await input_file.read()
-    enhanced_face = face_enhancer.run(decode_frame(file_content), blend_percentage=blend_percentage)
+    enhanced_face = face_enhancer.run(decode_frame(file_content), model=face_enhancer_model, blend_percentage=blend_percentage, )
     return Response(content=encode_frame_to_bytes(enhanced_face), media_type="image/png")
 
 
