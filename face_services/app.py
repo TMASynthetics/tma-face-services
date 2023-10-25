@@ -131,8 +131,11 @@ async def anonymize(input_file: UploadFile,
 async def swap(source_image_file: UploadFile, target_image_file: UploadFile, 
                source_face_id: int = Query(default=1, ge=1, le=100, description='The id of the face in the source frame use to replace the target face(s). Use the detect service to identify the faces.'),
                target_face_ids: List[int] = Query(None, description='The ids of the faces in the target frame to swap by the source face. Use the detect service to identify the faces.'),
-               enhance: bool = Query(default=False, enum=[False, True], description='Activate in order to enhance the quality of the swapped face(s).')):
-
+               face_swapper_model: str = Query(default=FaceSwapper().get_available_models()[0], enum=FaceSwapper().get_available_models(), description='The model to use for performing the face swapping.'),    
+               enhance: bool = Query(default=False, enum=[False, True], description='Activate in order to enhance the quality of the swapped face(s).'),
+               face_enhancer_model: str = Query(default=FaceEnhancer().get_available_models()[0], enum=FaceEnhancer().get_available_models(), description='The model to use for performing the face enhancement.'),
+               enhancer_blend_percentage: int = Query(default=100, ge=0, le=100, description='The ratio between the original face and the enhanced one. Higher values results in finer face.')):
+                 
     # Get the file size (in bytes)
     target_image_file.file.seek(0, 2)
     file_size = target_image_file.file.tell()
@@ -170,7 +173,10 @@ async def swap(source_image_file: UploadFile, target_image_file: UploadFile,
                                     decode_frame(target_content), 
                                     target_face_ids=target_face_ids, 
                                     source_face_id=source_face_id,
-                                    enhance=enhance)
+                                    swapper_model=face_swapper_model,
+                                    enhancer_model=face_enhancer_model,
+                                    enhance=enhance,
+                                    enhancer_blend_percentage=enhancer_blend_percentage)
     
     return Response(content=encode_frame_to_bytes(swapped_face), media_type="image/png")
 
