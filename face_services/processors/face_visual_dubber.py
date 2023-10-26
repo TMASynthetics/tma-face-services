@@ -2,6 +2,7 @@ import json
 import logging
 import shutil
 import cv2
+import numpy as np
 from tqdm import tqdm
 import uuid 
 import os
@@ -28,7 +29,6 @@ class FaceVisualDubber:
 		if not os.path.exists(self.folder_path):
 			os.makedirs(self.folder_path)
 
-
 		for folder in ['frames', 'faces']:
 			if not os.path.exists(os.path.join(self.folder_path, folder)):
 				os.makedirs(os.path.join(self.folder_path, folder))
@@ -40,8 +40,12 @@ class FaceVisualDubber:
 
 		for frame_idx in tqdm(range(self.source_video.frame_number)):
 
+
+
 			current_frame = self.source_video.get_frame_position_by_index(frame_idx)
 			cv2.imwrite(os.path.join(self.folder_path, 'frames', str(frame_idx)+'.png'), current_frame)
+
+
 
 
 			detected_faces = self.face_detector.run(current_frame)
@@ -53,12 +57,11 @@ class FaceVisualDubber:
 				logging.info('VisualDubber - No face detected')
 
 
-
-
-
-
-
-
+			landmarks = self.face_detector.get_face_3d_features_by_names(detected_faces[0], features_name=['mouth'])
+			points = []
+			for keypoint in landmarks:
+				points.append([int(keypoint[0]), int(keypoint[1])])
+			cv2.fillPoly(current_frame, pts=[np.array(points)], color=(255, 0, 0))
 
 			cv2.namedWindow('FaceVisualDubber', 0)
 			cv2.imshow('FaceVisualDubber', current_frame)

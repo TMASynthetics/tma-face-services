@@ -1,7 +1,17 @@
+from collections import OrderedDict
 import logging
 from typing import Any, Optional, List
 import insightface
 
+FACIAL_LANDMARKS_IDXS = OrderedDict([
+	("mouth", (48, 68)),
+	("right_eyebrow", (17, 22)),
+	("left_eyebrow", (22, 27)),
+	("right_eye", (36, 42)),
+	("left_eye", (42, 48)),
+	("nose", (27, 35)),
+	("jaw", (0, 17))
+])
 
 class FaceDetector:
   
@@ -27,5 +37,11 @@ class FaceDetector:
 				return detected_face
 		return None
 
-
+	@staticmethod
+	def get_face_3d_features_by_names(detected_face, features_name=[]):
+		facial_features = []
+		for feature_name in features_name:
+			if feature_name in FACIAL_LANDMARKS_IDXS.keys():
+				facial_features += detected_face.landmark_3d_68[FACIAL_LANDMARKS_IDXS[feature_name][0]:FACIAL_LANDMARKS_IDXS[feature_name][-1]]
+		return facial_features
 
