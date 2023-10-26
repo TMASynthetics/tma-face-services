@@ -1,12 +1,12 @@
 import logging
 
 
-class VisualDubber:
+class FaceReenactor:
   
 	def __init__(self):
-		logging.info('VisualDubber - Initialize')
+		logging.info('FaceReenactor - Initialize')
 
 	def run(self):
-		logging.info('VisualDubber - Run')
+		logging.info('FaceReenactor - Run')
 		return None
 

@@ -1,6 +1,6 @@
 from typing import Any, Dict, Optional, List, Tuple
 import numpy
-from face_services.processors.models import FACE_ENHANCER_MODELS
+from face_services.models.models_list import FACE_ENHANCER_MODELS
 from ..processors.face_detector import FaceDetector
 import logging
 import onnxruntime

@@ -8,7 +8,7 @@ import numpy as np
 from typing import Annotated, List
 from fastapi import FastAPI, File, UploadFile
 import uvicorn
-from face_services.app_utils import decode_frame, encode_frame_to_bytes, get_optimal_font_scale, serialize_faces_analysis
+from face_services.app_utils import decode_frame, encode_frame_to_bytes, get_optimal_font_scale, IMAGE_MIME_TYPES, IMAGE_SIZE_LIMIT_MB
 from face_services.processors.face_detector import FaceDetector
 from face_services.processors.face_anonymizer import FaceAnonymizer
 from face_services.processors.face_swapper import FaceSwapper
@@ -27,6 +27,7 @@ tags_metadata = [
         },
     },
 ]
+
 app = FastAPI(
     title="TMA - Synthetic Media Team - Face Services API",
     description="",
@@ -38,19 +39,16 @@ app = FastAPI(
     openapi_tags=tags_metadata
 )
 
-face_analyzer = FaceDetector()
-face_anonymiser = FaceAnonymizer()
-face_swapper = FaceSwapper()
-face_enhancer = FaceEnhancer()
-
-IMAGE_SIZE_LIMIT_MB = 10
-VIDEO_SIZE_LIMIT_MB = 1024
-IMAGE_MIME_TYPES = ["image/jpeg", "image/png", "image/gif", "image/bmp"]
-VIDEO_MIME_TYPES = ["video/x-msvideo", "video/mp4", "video/mpeg", "video/ogg", "video/webm", "video/3gpp", "video/3gpp2"]
-
 @app.route('/', include_in_schema=False)
 def app_redirect(_):
     return RedirectResponse(url='/docs')
+
+@app.on_event("startup")
+async def startup_event():
+    app.face_analyzer = FaceDetector()
+    app.face_anonymiser = FaceAnonymizer()
+    app.face_swapper = FaceSwapper()
+    app.face_enhancer = FaceEnhancer()
 
 @app.post("/testing/detect", tags=["Testing"])
 async def detect(input_file: UploadFile):
@@ -75,7 +73,7 @@ async def detect(input_file: UploadFile):
     file_content = await input_file.read()
 
     frame = decode_frame(file_content)
-    detected_faces = face_analyzer.run(frame)
+    detected_faces = app.face_analyzer.run(frame)
 
     for detected_face in detected_faces:
         cv2.rectangle(frame,(int(detected_face.bbox[0]), int(detected_face.bbox[1])), (int(detected_face.bbox[2]), int(detected_face.bbox[3])), (0, 255, 0), 2)
@@ -124,7 +122,7 @@ async def anonymize(input_file: UploadFile,
     # Get the file
     file_content = await input_file.read()
 
-    anonymised_face = face_anonymiser.run(decode_frame(file_content), face_ids=face_ids, method=method, blur_factor=blur_factor, pixel_blocks=pixel_blocks)
+    anonymised_face = app.face_anonymiser.run(decode_frame(file_content), face_ids=face_ids, method=method, blur_factor=blur_factor, pixel_blocks=pixel_blocks)
     return Response(content=encode_frame_to_bytes(anonymised_face), media_type="image/png")
 
 @app.post("/testing/swap", tags=["Testing"])
@@ -169,7 +167,7 @@ async def swap(source_image_file: UploadFile, target_image_file: UploadFile,
     # Get the file
     source_content = await source_image_file.read()
 
-    swapped_face = face_swapper.run(decode_frame(source_content), 
+    swapped_face = app.face_swapper.run(decode_frame(source_content), 
                                     decode_frame(target_content), 
                                     target_face_ids=target_face_ids, 
                                     source_face_id=source_face_id,
@@ -203,9 +201,8 @@ async def enhance(input_file: UploadFile,
 
     # Get the file
     file_content = await input_file.read()
-    enhanced_face = face_enhancer.run(decode_frame(file_content), model=face_enhancer_model, blend_percentage=blend_percentage, )
+    enhanced_face = app.face_enhancer.run(decode_frame(file_content), model=face_enhancer_model, blend_percentage=blend_percentage, )
     return Response(content=encode_frame_to_bytes(enhanced_face), media_type="image/png")
-
 
 if __name__ == '__main__':
     uvicorn.run(app, host='0.0.0.0', port=80)

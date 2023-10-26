@@ -7,7 +7,7 @@ class FaceDetector:
   
 	def __init__(self):
 		logging.info('FaceDetector - Initialize')
-		self.model = insightface.app.FaceAnalysis(name = 'buffalo_l', root='face_services/.assets/face_detector', providers=['CPUExecutionProvider'])
+		self.model = insightface.app.FaceAnalysis(name = 'buffalo_l', root='face_services/models/face_detector', providers=['CPUExecutionProvider'])
 		self.model.prepare(ctx_id = 0)
 
 	def run(self, frame):

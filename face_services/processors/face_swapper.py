@@ -4,7 +4,7 @@ import threading
 import insightface
 import numpy
 
-from face_services.processors.models import FACE_SWAPPER_MODELS
+from face_services.models.models_list import FACE_SWAPPER_MODELS
 
 from ..processors.face_detector import FaceDetector
 from ..processors.face_enhancer import FaceEnhancer

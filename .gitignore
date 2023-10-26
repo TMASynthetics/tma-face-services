@@ -168,3 +168,6 @@ demo.py
 gfpgan.zip
 .DS_Store
 .DS_Store
+*.zip
+*.onnx
+*.pth
