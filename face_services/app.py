@@ -9,7 +9,7 @@ from typing import Annotated, List
 from fastapi import FastAPI, File, UploadFile
 import uvicorn
 from face_services.app_utils import decode_frame, encode_frame_to_bytes, get_optimal_font_scale, IMAGE_MIME_TYPES, IMAGE_SIZE_LIMIT_MB
-from face_services.processors.face_detector import FaceDetector
+from face_services.processors.face_analyzer import FaceDetector
 from face_services.processors.face_anonymizer import FaceAnonymizer
 from face_services.processors.face_swapper import FaceSwapper
 from face_services.processors.face_enhancer import FaceEnhancer

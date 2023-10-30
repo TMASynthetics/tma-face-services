@@ -6,7 +6,7 @@ import numpy
 
 from face_services.models.models_list import FACE_SWAPPER_MODELS
 
-from ..processors.face_detector import FaceDetector
+from .face_analyzer import FaceDetector
 from ..processors.face_enhancer import FaceEnhancer
 
 class FaceSwapper:

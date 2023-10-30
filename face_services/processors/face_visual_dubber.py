@@ -9,7 +9,7 @@ import os
 
 from face_services.components.audio import Audio
 from face_services.components.video import Video
-from face_services.processors.face_detector import FaceDetector
+from face_services.processors.face_analyzer import FaceDetector
 from face_services.processors.utilities import serialize_faces_analysis
 
 class FaceVisualDubber:
