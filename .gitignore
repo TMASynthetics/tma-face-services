@@ -171,3 +171,6 @@ gfpgan.zip
 *.zip
 *.onnx
 *.pth
+clean.py
+face_services/processors/temp/__init__.py
+face_services/processors/temp/__init__.py

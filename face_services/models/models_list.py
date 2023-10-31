@@ -21,11 +21,6 @@ FACE_ANALYZER_MODELS =\
 		'url': 'https://github.com/harisreedhar/Face-Swappers-ONNX/releases/download/simswap/simswap_arcface_backbone.onnx',
 		'path': resolve_relative_path('../models/face_detector/simswap_arcface_backbone.onnx')
 	},
-	'face_detection_yunet':
-	{
-		'url': 'https://github.com/opencv/opencv_zoo/raw/main/models/face_detection_yunet/face_detection_yunet_2023mar.onnx',
-		'path': resolve_relative_path('../models/face_detector/face_detection_yunet_2023mar.onnx')
-	},
 	'gender_age':
 	{
 		'url': 'https://huggingface.co/facefusion/buffalo_l/resolve/main/genderage.onnx',
@@ -44,6 +39,13 @@ FACE_SWAPPER_MODELS =\
 	{
 		'url': 'https://github.com/facefusion/facefusion-assets/releases/download/models/inswapper_128.onnx',
 		'path': resolve_relative_path('../models/face_swapper/inswapper_128.onnx')
+	},
+	'simswap_244':
+	{
+		'url': 'https://github.com/harisreedhar/Face-Swappers-ONNX/releases/download/simswap/simswap.onnx',
+		'path': resolve_relative_path('../models/face_swapper/simswap.onnx'),
+		'template': 'arcface',
+		'size': (112, 224)
 	}
 }
 

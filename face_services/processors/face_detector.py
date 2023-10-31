@@ -61,6 +61,7 @@ class FaceDetector:
 		self.model.setTopK(100)
 		self.model.setInputSize((temp_frame_width, temp_frame_height))
 
+
 		_, detections = self.model.detect(temp_frame)
 		if detections.any():
 			for detection in detections:
@@ -73,14 +74,14 @@ class FaceDetector:
 				]
 				kps = (detection[4:14].reshape((5, 2)) * [[ ratio_width, ratio_height ]])
 				score = detection[14]
-				faces.append(Face(bbox=bbox, confidence=score))
-				faces[-1]
+				face = Face(bbox=bbox, confidence=score)
+				face.landmarks_2d_5 = kps.tolist()
+				faces.append(face)
 
 
-		return faces
 
+		return self.identify_faces(faces)
 
-		return self.identify_faces(self.model.get(frame))
 
 	def identify_faces(self, detected_faces):
 		logging.info('FaceDetector - Identify faces')

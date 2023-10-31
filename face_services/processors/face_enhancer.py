@@ -1,7 +1,7 @@
 from typing import Any, Dict, Optional, List, Tuple
 import numpy
 from face_services.models.models_list import FACE_ENHANCER_MODELS
-from .face_analyzer import FaceDetector
+from .face_detector import FaceDetector
 import logging
 import onnxruntime
 import cv2
@@ -14,7 +14,7 @@ class FaceEnhancer:
 		self.model = None
 		self.current_model_name = self.get_available_models()[0]
 		self.check_current_model(model)
-		self.face_analyzer = FaceDetector()
+		self.face_detector = FaceDetector()
 
 	@staticmethod
 	def get_available_models():
@@ -39,7 +39,7 @@ class FaceEnhancer:
 		logging.info('FaceEnhancer - Run with blend_percentage : {}%'.format(blend_percentage))
 		
 		enhanced_frame = frame.copy()
-		analysed_faces = self.face_analyzer.run(frame)
+		analysed_faces = self.face_detector.run(frame)
 		self.check_current_model(model)
 
 		for face in analysed_faces:

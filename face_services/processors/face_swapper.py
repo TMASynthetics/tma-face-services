@@ -6,7 +6,7 @@ import numpy
 
 from face_services.models.models_list import FACE_SWAPPER_MODELS
 
-from .face_analyzer import FaceDetector
+from .face_detector import FaceDetector
 from ..processors.face_enhancer import FaceEnhancer
 
 class FaceSwapper:
@@ -16,7 +16,7 @@ class FaceSwapper:
 		self.model = None
 		self.current_swapper_model_name = self.get_available_models()[0]
 		self.check_current_model(swapper_model)
-		self.face_analyzer = FaceDetector()
+		self.face_detector = FaceDetector()
 		self.face_enhancer = FaceEnhancer(model=enhancer_model)
 
 	@staticmethod
@@ -42,8 +42,8 @@ class FaceSwapper:
 		logging.info('FaceSwapper - Run')
 		swapped_frame = img_target.copy()
 
-		faces_target = self.face_analyzer.run(img_target)
-		faces_source = self.face_analyzer.run(img_source)
+		faces_target = self.face_detector.run(img_target)
+		faces_source = self.face_detector.run(img_source)
 		self.check_current_model(swapper_model)
 
 		if target_face_ids is None:

@@ -13,54 +13,81 @@ FACIAL_LANDMARKS_3D_68_IDXS = OrderedDict([
 	("jaw", (0, 17))
 ])
 
+FACIAL_LANDMARKS_2D_5_IDXS = OrderedDict([
+	("mouth", (2, 3)),
+	("right_eye", 0),
+	("left_eye", 1),
+	("nose", 4),
+])
+
 class Face:
     def __init__(self, bbox=None, confidence=None) -> None:
         self.bbox = bbox
         self.landmarks_3d_68 = {}
         self.landmarks_2d_106 = {}
+        self.landmarks_2d_5 = {}
         self.confidence = confidence
         self.embedding = None
-        self.normed_embedding = None
-        self.gender = None
+        self._gender = None
         self.age = None
+        self.id = 0
 
-    @property    
-    def fps(self) -> float:
-        return self._video.get(cv2.CAP_PROP_FPS)
-    
-    @property    
-    def frame_number(self) -> int:
-        return int(self._video.get(cv2.CAP_PROP_FRAME_COUNT))
 
-    @property    
-    def width(self) -> int:
-        return int(self._video.get(cv2.CAP_PROP_FRAME_WIDTH))
+    @property 
+    def sex(self):
+        if self._gender is None:
+            return None
+        return 'M' if self._gender==1 else 'F'
     
-    @property    
-    def height(self) -> int:
-        return int(self._video.get(cv2.CAP_PROP_FRAME_HEIGHT))
+    @property
+    def embedding_norm(self):
+        if self.embedding is None:
+            return None
+        return np.linalg.norm(self.embedding, ord=2)
+
+    @property 
+    def normed_embedding(self):
+        if self.embedding is None:
+            return None
+        return self.embedding / self.embedding_norm
+
+    # @property    
+    # def fps(self) -> float:
+    #     return self._video.get(cv2.CAP_PROP_FPS)
+    
+    # @property    
+    # def frame_number(self) -> int:
+    #     return int(self._video.get(cv2.CAP_PROP_FRAME_COUNT))
+
+    # @property    
+    # def width(self) -> int:
+    #     return int(self._video.get(cv2.CAP_PROP_FRAME_WIDTH))
+    
+    # @property    
+    # def height(self) -> int:
+    #     return int(self._video.get(cv2.CAP_PROP_FRAME_HEIGHT))
           
-    @property    
-    def duration(self) -> float:
-        return self.frame_number / self.fps
+    # @property    
+    # def duration(self) -> float:
+    #     return self.frame_number / self.fps
 
-    def get_frame_position_by_time(self, position_ms) -> np.array:
-        self._video.set(cv2.CAP_PROP_POS_MSEC, position_ms)
-        return self.get_frame()   
+    # def get_frame_position_by_time(self, position_ms) -> np.array:
+    #     self._video.set(cv2.CAP_PROP_POS_MSEC, position_ms)
+    #     return self.get_frame()   
     
-    def get_frame_position_by_index(self, position_index) -> np.array:
-        self._video.set(cv2.CAP_PROP_POS_FRAMES, position_index)
-        return self.get_frame()   
+    # def get_frame_position_by_index(self, position_index) -> np.array:
+    #     self._video.set(cv2.CAP_PROP_POS_FRAMES, position_index)
+    #     return self.get_frame()   
     
-    def get_current_frame_position(self) -> int:
-        return self._video.get(cv2.CAP_PROP_POS_FRAMES)
+    # def get_current_frame_position(self) -> int:
+    #     return self._video.get(cv2.CAP_PROP_POS_FRAMES)
     
-    def get_current_frame_timestamp(self) -> float:
-        return self._video.get(cv2.CAP_PROP_POS_MSEC)
+    # def get_current_frame_timestamp(self) -> float:
+    #     return self._video.get(cv2.CAP_PROP_POS_MSEC)
     
-    def get_frame(self) -> np.array:
-        _, frame = self._video.read()
-        return frame
+    # def get_frame(self) -> np.array:
+    #     _, frame = self._video.read()
+    #     return frame
     
 
 # class Face(dict):
