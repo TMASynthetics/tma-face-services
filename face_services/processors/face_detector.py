@@ -75,7 +75,7 @@ class FaceDetector:
 				kps = (detection[4:14].reshape((5, 2)) * [[ ratio_width, ratio_height ]])
 				score = detection[14]
 				face = Face(bbox=bbox, confidence=score)
-				face.landmarks_2d_5 = kps.tolist()
+				face.kps = kps.tolist()
 				faces.append(face)
 
 
@@ -96,11 +96,11 @@ class FaceDetector:
 				return detected_face
 		return None
 
-	@staticmethod
-	def get_face_3d_features_by_names(detected_face, features_name=[]):
-		facial_features = []
-		for feature_name in features_name:
-			if feature_name in FACIAL_LANDMARKS_IDXS.keys():
-				facial_features += detected_face.landmark_3d_68[FACIAL_LANDMARKS_IDXS[feature_name][0]:FACIAL_LANDMARKS_IDXS[feature_name][-1]]
-		return facial_features
+	# @staticmethod
+	# def get_face_3d_features_by_names(detected_face, features_name=[]):
+	# 	facial_features = []
+	# 	for feature_name in features_name:
+	# 		if feature_name in FACIAL_LANDMARKS_IDXS.keys():
+	# 			facial_features += detected_face.landmark_3d_68[FACIAL_LANDMARKS_IDXS[feature_name][0]:FACIAL_LANDMARKS_IDXS[feature_name][-1]]
+	# 	return facial_features
 

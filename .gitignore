@@ -174,3 +174,4 @@ gfpgan.zip
 clean.py
 face_services/processors/temp/__init__.py
 face_services/processors/temp/__init__.py
+.DS_Store

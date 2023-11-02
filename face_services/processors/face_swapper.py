@@ -3,8 +3,15 @@ from typing import Any, Optional, List
 import threading
 import insightface
 import numpy
+from onnx import numpy_helper
+import onnx
+import onnxruntime
+
+from face_services.components.face import Face
 
 from face_services.models.models_list import FACE_SWAPPER_MODELS
+from face_services.processors.face_helper import paste_back, warp_face
+from face_services.typing import Embedding, Frame
 
 from .face_detector import FaceDetector
 from ..processors.face_enhancer import FaceEnhancer
@@ -29,12 +36,12 @@ class FaceSwapper:
 			if model is not None and model in self.get_available_models():
 				self.current_swapper_model_name = model
 				logging.info('FaceSwapper - Initialize with model : {}'.format(self.current_swapper_model_name))
-				self.model = insightface.model_zoo.get_model(FACE_SWAPPER_MODELS[self.current_swapper_model_name]['path'], download=False, download_zip=False)
+				self.model = onnxruntime.InferenceSession(FACE_SWAPPER_MODELS[self.current_swapper_model_name]['path'], providers = ['CPUExecutionProvider'])
 			else:
 				logging.info('FaceSwapper - Model : {} not in {}'.format(model, self.get_available_models()))	
 		elif self.model is None:
 			logging.info('FaceSwapper - Initialize with model : {}'.format(self.current_swapper_model_name))
-			self.model = insightface.model_zoo.get_model(FACE_SWAPPER_MODELS[self.current_swapper_model_name]['path'], download=False, download_zip=False)
+			self.model = onnxruntime.InferenceSession(FACE_SWAPPER_MODELS[self.current_swapper_model_name]['path'], providers = ['CPUExecutionProvider'])
 		else:
 			logging.info('FaceSwapper - Current model is already : {}'.format(model))	
 
@@ -54,7 +61,32 @@ class FaceSwapper:
 			if face_source is not None:
 				for face_target in faces_target:
 					if face_target.id in target_face_ids or len(target_face_ids)==0 :
-						swapped_frame = self.model.get(swapped_frame, face_target, face_source)
+						
+						
+
+						model_size = FACE_SWAPPER_MODELS[self.current_swapper_model_name]['size']
+						model_template = FACE_SWAPPER_MODELS[self.current_swapper_model_name]['template']
+						crop_frame, affine_matrix = warp_face(swapped_frame, face_target.kps, model_template, model_size)
+						crop_frame = self.prepare_crop_frame(crop_frame)
+						frame_processor_inputs = {}
+						for frame_processor_input in self.model.get_inputs():
+							if frame_processor_input.name == 'source':
+								frame_processor_inputs[frame_processor_input.name] = self.prepare_source_face(face_source)
+							if frame_processor_input.name == 'source_embedding':
+								frame_processor_inputs[frame_processor_input.name] = self.prepare_source_embedding(source_face) # type: ignore[assignment]
+							if frame_processor_input.name == 'target':
+								frame_processor_inputs[frame_processor_input.name] = crop_frame # type: ignore[assignment]
+						crop_frame = self.model.run(None, frame_processor_inputs)[0][0]
+						crop_frame = self.normalize_crop_frame(crop_frame)
+						swapped_frame = paste_back(swapped_frame, crop_frame, affine_matrix)
+
+						
+						# swapped_frame = self.model.get(swapped_frame, face_target, face_source)
+			
+
+
+
+			
 			else:
 				logging.info('FaceSwapper - No face with id={} in the source image'.format(source_face_id))
 		else:
@@ -71,9 +103,37 @@ class FaceSwapper:
 
 
 
+	def get_model_matrix(self) -> Any:
+		model_path = FACE_SWAPPER_MODELS[self.get_available_models()[0]]['path']
+		model = onnx.load(model_path)
+		return numpy_helper.to_array(model.graph.initializer[-1])
 
 
 
+	def prepare_source_face(self, source_face : Face) -> Face:
+		model_matrix = self.get_model_matrix()
+		source_face = source_face.embedding.reshape((1, -1))
+		source_face = numpy.dot(source_face, model_matrix) / numpy.linalg.norm(source_face)
+		return source_face
+
+
+	def prepare_source_embedding(self, source_face : Face) -> Embedding:
+		source_embedding = source_face.normed_embedding.reshape(1, -1)
+		return source_embedding
+
+
+	def prepare_crop_frame(self, crop_frame : Frame) -> Frame:
+		crop_frame = crop_frame / 255.0
+		crop_frame = crop_frame[:, :, ::-1].transpose(2, 0, 1)
+		crop_frame = numpy.expand_dims(crop_frame, axis = 0).astype(numpy.float32)
+		return crop_frame
+
+
+	def normalize_crop_frame(self, crop_frame : Frame) -> Frame:
+		crop_frame = crop_frame.transpose(1, 2, 0)
+		crop_frame = (crop_frame * 255.0).round()
+		crop_frame = crop_frame[:, :, ::-1].astype(numpy.uint8)
+		return crop_frame
 
 
 

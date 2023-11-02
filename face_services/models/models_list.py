@@ -33,19 +33,24 @@ FACE_SWAPPER_MODELS =\
 	'inswapper_128':
 	{
 		'url': 'https://github.com/facefusion/facefusion-assets/releases/download/models/inswapper_128_fp16.onnx',
-		'path': resolve_relative_path('../models/face_swapper/inswapper_128_fp16.onnx')
+		'path': resolve_relative_path('../models/face_swapper/inswapper_128_fp16.onnx'),
+        'size': (128, 128),
+        'template': 'arcface',
 	},
 	'inswapper_128_fp16':
 	{
 		'url': 'https://github.com/facefusion/facefusion-assets/releases/download/models/inswapper_128.onnx',
-		'path': resolve_relative_path('../models/face_swapper/inswapper_128.onnx')
+		'path': resolve_relative_path('../models/face_swapper/inswapper_128.onnx'),
+        'size': (128, 128),
+        'template': 'arcface',
 	},
 	'simswap_244':
 	{
 		'url': 'https://github.com/harisreedhar/Face-Swappers-ONNX/releases/download/simswap/simswap.onnx',
 		'path': resolve_relative_path('../models/face_swapper/simswap.onnx'),
 		'template': 'arcface',
-		'size': (112, 224)
+		'size': (112, 224),
+        'template': 'arcface',
 	}
 }
 

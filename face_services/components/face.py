@@ -25,7 +25,7 @@ class Face:
         self.bbox = bbox
         self.landmarks_3d_68 = {}
         self.landmarks_2d_106 = {}
-        self.landmarks_2d_5 = {}
+        self.kps = {}
         self.confidence = confidence
         self.embedding = None
         self._gender = None
