@@ -69,7 +69,7 @@ class FaceEnhancer:
 			[ 201.26117, 371.41043 ],
 			[ 313.08905, 371.15118 ]
 		])
-		affine_matrix = cv2.estimateAffinePartial2D(target_face['kps'], template, method = cv2.LMEDS)[0]
+		affine_matrix = cv2.estimateAffinePartial2D(target_face['keypoints'], template, method = cv2.LMEDS)[0]
 		crop_frame = cv2.warpAffine(temp_frame, affine_matrix, (512, 512))
 		return crop_frame, affine_matrix
 

@@ -76,6 +76,10 @@ class FaceDetector:
 				score = detection[14]
 				face = Face(bbox=bbox, confidence=score)
 				face.kps = kps.tolist()
+				face.embedding = calc_embedding(frame, kps)
+				face.normed_embedding = face.embedding / np.linalg.norm(face.embedding)
+	
+				
 				faces.append(face)
 
 
