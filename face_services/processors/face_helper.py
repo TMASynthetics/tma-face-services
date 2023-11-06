@@ -52,3 +52,12 @@ def paste_back(temp_frame: Frame, crop_frame: Frame, affine_matrix: Matrix) -> F
 	temp_frame = inverse_blur_frame * inverse_temp_frame + (1 - inverse_blur_frame) * temp_frame
 	temp_frame = temp_frame.astype(numpy.uint8)
 	return temp_frame
+
+def resize_frame_dimension(frame : Frame, max_width : int, max_height : int) -> Frame:
+	height, width = frame.shape[:2]
+	if height > max_height or width > max_width:
+		scale = min(max_height / height, max_width / width)
+		new_width = int(width * scale)
+		new_height = int(height * scale)
+		return cv2.resize(frame, (new_width, new_height))
+	return frame

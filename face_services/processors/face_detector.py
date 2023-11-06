@@ -7,16 +7,8 @@ from face_services.components.face import Face
 from face_services.models.models_list import FACE_DETECTION_MODELS
 import numpy as np
 import cv2
-Frame = np.ndarray[Any, Any]
 
-def resize_frame_dimension(frame : Frame, max_width : int, max_height : int) -> Frame:
-	height, width = frame.shape[:2]
-	if height > max_height or width > max_width:
-		scale = min(max_height / height, max_width / width)
-		new_width = int(width * scale)
-		new_height = int(height * scale)
-		return cv2.resize(frame, (new_width, new_height))
-	return frame
+from face_services.processors.face_helper import resize_frame_dimension
 
 class FaceDetector:
   
@@ -63,6 +55,7 @@ class FaceDetector:
 
 
 		_, detections = self.model.detect(temp_frame)
+
 		if detections.any():
 			for detection in detections:
 				bbox =\
@@ -72,18 +65,10 @@ class FaceDetector:
 					(detection[0:4][0] + detection[0:4][2]) * ratio_width,
 					(detection[0:4][1] + detection[0:4][3]) * ratio_height
 				]
-				kps = (detection[4:14].reshape((5, 2)) * [[ ratio_width, ratio_height ]])
-				score = detection[14]
-				face = Face(bbox=bbox, confidence=score)
-				face.kps = kps.tolist()
-				face.embedding = calc_embedding(frame, kps)
-				face.normed_embedding = face.embedding / np.linalg.norm(face.embedding)
-	
-				
+				face = Face(bbox=bbox, confidence=detection[14])
+				face.keypoints = (detection[4:14].reshape((5, 2)) * [[ ratio_width, ratio_height ]]).tolist()
 				faces.append(face)
-
-
-
+				
 		return self.identify_faces(faces)
 
 
