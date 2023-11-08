@@ -1,4 +1,5 @@
 from typing import Any, Dict, Optional, List, Tuple
+import uuid
 import numpy
 from face_services.models.models_list import FACE_ENHANCER_MODELS
 from .face_detector import FaceDetector
@@ -10,7 +11,8 @@ import cv2
 class FaceEnhancer:
   
 	def __init__(self, model=None):
-		logging.info('FaceEnhancer - Initialize')
+		self.id = uuid.uuid4()
+		logging.info('FaceEnhancer {} - Initialize'.format(self.id))
 		self.model = None
 		self.current_model_name = self.get_available_models()[0]
 		self.check_current_model(model)

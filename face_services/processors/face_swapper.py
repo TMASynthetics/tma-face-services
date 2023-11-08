@@ -1,6 +1,7 @@
 import logging
 from typing import Any, Optional, List
 import threading
+import uuid
 import insightface
 import numpy
 from onnx import numpy_helper
@@ -19,7 +20,8 @@ from ..processors.face_enhancer import FaceEnhancer
 class FaceSwapper:
   
 	def __init__(self, swapper_model=None, enhancer_model=None):
-		logging.info('FaceSwapper - Initialize')
+		self.id = uuid.uuid4()
+		logging.info('FaceSwapper {} - Initialize'.format(self.id))
 		self.model = None
 		self.current_swapper_model_name = self.get_available_models()[0]
 		self.check_current_model(swapper_model)
@@ -76,13 +78,12 @@ class FaceSwapper:
 								frame_processor_inputs[frame_processor_input.name] = self.prepare_source_embedding(source_face) # type: ignore[assignment]
 							if frame_processor_input.name == 'target':
 								frame_processor_inputs[frame_processor_input.name] = crop_frame # type: ignore[assignment]
-						crop_frame = self.model.run(None, frame_processor_inputs)[0][0]
-						crop_frame = self.normalize_crop_frame(crop_frame)
+
+						output = self.model.run(None, frame_processor_inputs)[0][0]
+
+						crop_frame = self.normalize_crop_frame(output)
 						swapped_frame = paste_back(swapped_frame, crop_frame, affine_matrix)
 
-						
-						# swapped_frame = self.model.get(swapped_frame, face_target, face_source)
-			
 
 
 

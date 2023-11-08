@@ -1,7 +1,6 @@
 from collections import OrderedDict
 import logging
 from typing import Any, Dict, Optional, List
-import insightface
 import uuid
 from face_services.models.models_list import FACE_ANALYZER_MODELS
 from face_services.typing import Frame
@@ -33,7 +32,7 @@ class FaceAnalyzer:
 			self.tasks = tasks
 		for task in self.tasks.keys():
 			self.tasks[task]
-			self._models[task] = 
+			# self._models[task] = 
 
 		return list(FACE_ANALYZER_MODELS.keys())
 	
