@@ -3,7 +3,7 @@ import logging
 from typing import Any, Optional, List
 import uuid
 from face_services.components.face import Face
-from face_services.models.models_list import FACE_DETECTION_MODELS
+from face_services.models.models_list import FACE_ANALYZER_MODELS
 import numpy as np
 import cv2
 
@@ -15,28 +15,7 @@ class FaceDetector:
 		self.id = uuid.uuid4()
 		logging.info('FaceDetector {} - Initialize'.format(self.id))
 		self.model = None
-		self.current_model_name = self.get_available_models()[0]
-		self.check_current_model(self.current_model_name)
-
-
-	@staticmethod
-	def get_available_models():
-		return list(FACE_DETECTION_MODELS.keys())
-
-	def check_current_model(self, model):
-		logging.info('FaceDetector {} - Current model is : {}'.format(self.current_model_name, self.id))
-		if model != self.current_model_name and self.model is not None:
-			if model is not None and model in self.get_available_models():
-				self.current_model_name = model
-				logging.info('FaceDetector {} - Initialize with model : {}'.format(self.current_model_name, self.id))
-				self.model = cv2.FaceDetectorYN.create(FACE_DETECTION_MODELS[self.current_model_name]['path'], None, (0, 0))
-			else:
-				logging.info('FaceDetector {} - Model : {} not in {}'.format(self.id, model, self.get_available_models()))	
-		elif self.model is None:
-			logging.info('FaceDetector {} - Initialize with model : {}'.format(self.id, self.current_model_name))
-			self.model = cv2.FaceDetectorYN.create(FACE_DETECTION_MODELS[self.current_model_name]['path'], None, (0, 0))
-		else:
-			logging.info('FaceDetector {} - Current model is already : {}'.format(self.id, model))	
+		self.model = cv2.FaceDetectorYN.create(FACE_ANALYZER_MODELS['detection']['face_detection_yunet']['path'], None, (0, 0))
 
 	def run(self, frame):
 		logging.info('FaceDetector {} - Run'.format(self.id))

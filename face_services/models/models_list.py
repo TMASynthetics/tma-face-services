@@ -7,12 +7,12 @@ FACE_ANALYZER_MODELS =\
 		'face_recognition_arcface_inswapper':
 		{
 			'url': 'https://huggingface.co/bluefoxcreation/insightface-retinaface-arcface-model/resolve/main/w600k_r50.onnx',
-			'path': resolve_relative_path('../models/face_detector/w600k_r50.onnx'),
+			'path': resolve_relative_path('../models/face_analyzer/w600k_r50.onnx'),
 		},
 		'face_recognition_arcface_simswap':
 		{
 			'url': 'https://github.com/harisreedhar/Face-Swappers-ONNX/releases/download/simswap/simswap_arcface_backbone.onnx',
-			'path': resolve_relative_path('../models/face_detector/simswap_arcface_backbone.onnx'),
+			'path': resolve_relative_path('../models/face_analyzer/simswap_arcface_backbone.onnx'),
 		},
     },
 	'gender_age_estimation':
@@ -20,7 +20,7 @@ FACE_ANALYZER_MODELS =\
 		'gender_age_model':
 		{
 			'url': 'https://huggingface.co/facefusion/buffalo_l/resolve/main/genderage.onnx',
-			'path': resolve_relative_path('../models/face_detector/genderage.onnx'),
+			'path': resolve_relative_path('../models/face_analyzer/genderage.onnx'),
 		},
 	},
 	'detection':
@@ -28,7 +28,7 @@ FACE_ANALYZER_MODELS =\
 		'face_detection_yunet':
 		{
 			'url': 'https://github.com/opencv/opencv_zoo/raw/main/models/face_detection_yunet/face_detection_yunet_2023mar.onnx',
-			'path': resolve_relative_path('../models/face_detector/face_detection_yunet_2023mar.onnx'),
+			'path': resolve_relative_path('../models/face_analyzer/face_detection_yunet_2023mar.onnx'),
 		},
 	},
 }

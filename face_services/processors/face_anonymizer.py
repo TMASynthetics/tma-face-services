@@ -1,5 +1,6 @@
 import logging
 from typing import Any, Optional, List
+import uuid
 import cv2
 import numpy as np
 from .face_analyzer import FaceDetector
@@ -8,7 +9,8 @@ from .face_analyzer import FaceDetector
 class FaceAnonymizer:
   
 	def __init__(self):
-		logging.info('FaceAnonymizer - Initialize')
+		self.id = uuid.uuid4()
+		logging.info('FaceAnonymizer {} - Initialize'.format(self.id))
 		self.face_detector = FaceDetector()
 
 	def run(self, frame, face_ids=[], method="blur", blur_factor=3.0, pixel_blocks=9):
