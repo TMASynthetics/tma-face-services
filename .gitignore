@@ -157,6 +157,10 @@ gfpgan/
 .assets/
 tests/
 .venv/
+face_services/processors/wav2lip/output
+face_services/processors/wav2lip/temp
+face_services/processors/wav2lip/predicator
+face_services/processors/wav2lip/results
 
 docker_cmd
 .DS_Store
@@ -175,3 +179,8 @@ clean.py
 face_services/processors/temp/__init__.py
 face_services/processors/temp/__init__.py
 .DS_Store
+face_services/processors/wav2lip/face_detection/detection/__init__.py
+face_services/processors/wav2lip/face_detection/detection/sfd/__init__.py
+face_services/processors/wav2lip/face_detection/__init__.py
+.DS_Store
+face_services/processors/wav2lip/models/__init__.py

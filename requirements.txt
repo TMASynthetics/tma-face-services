@@ -14,3 +14,5 @@ Uvicorn==0.23.2
 python-multipart==0.0.6
 librosa==0.10.1
 tqdm
+dlib
+imutils

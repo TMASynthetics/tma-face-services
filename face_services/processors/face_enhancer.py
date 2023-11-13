@@ -1,6 +1,6 @@
 from typing import Any, Dict, Optional, List, Tuple
 import uuid
-import numpy
+import numpy as np
 from face_services.models.models_list import FACE_ENHANCER_MODELS
 from .face_detector import FaceDetector
 import logging
@@ -63,7 +63,7 @@ class FaceEnhancer:
 
 
 	def warp_face(self, target_face, temp_frame):
-		template = numpy.array(
+		template = np.array(
 		[
 			[ 192.98138, 239.94708 ],
 			[ 318.90277, 240.1936 ],
@@ -71,7 +71,7 @@ class FaceEnhancer:
 			[ 201.26117, 371.41043 ],
 			[ 313.08905, 371.15118 ]
 		])
-		affine_matrix = cv2.estimateAffinePartial2D(target_face['keypoints'], template, method = cv2.LMEDS)[0]
+		affine_matrix = cv2.estimateAffinePartial2D(np.array(target_face.keypoints), template, method = cv2.LMEDS)[0]
 		crop_frame = cv2.warpAffine(temp_frame, affine_matrix, (512, 512))
 		return crop_frame, affine_matrix
 
@@ -79,16 +79,16 @@ class FaceEnhancer:
 	def prepare_crop_frame(self, crop_frame):
 		crop_frame = crop_frame[:, :, ::-1] / 255.0
 		crop_frame = (crop_frame - 0.5) / 0.5
-		crop_frame = numpy.expand_dims(crop_frame.transpose(2, 0, 1), axis = 0).astype(numpy.float32)
+		crop_frame = np.expand_dims(crop_frame.transpose(2, 0, 1), axis = 0).astype(np.float32)
 		return crop_frame
 
 
 	def normalize_crop_frame(self, crop_frame):
-		crop_frame = numpy.clip(crop_frame, -1, 1)
+		crop_frame = np.clip(crop_frame, -1, 1)
 		crop_frame = (crop_frame + 1) / 2
 		crop_frame = crop_frame.transpose(1, 2, 0)
 		crop_frame = (crop_frame * 255.0).round()
-		crop_frame = crop_frame.astype(numpy.uint8)[:, :, ::-1]
+		crop_frame = crop_frame.astype(np.uint8)[:, :, ::-1]
 		return crop_frame
 
 
@@ -97,18 +97,18 @@ class FaceEnhancer:
 		temp_frame_height, temp_frame_width = temp_frame.shape[0:2]
 		crop_frame_height, crop_frame_width = crop_frame.shape[0:2]
 		inverse_crop_frame = cv2.warpAffine(crop_frame, inverse_affine_matrix, (temp_frame_width, temp_frame_height))
-		inverse_mask = numpy.ones((crop_frame_height, crop_frame_width, 3), dtype = numpy.float32)
+		inverse_mask = np.ones((crop_frame_height, crop_frame_width, 3), dtype = np.float32)
 		inverse_mask_frame = cv2.warpAffine(inverse_mask, inverse_affine_matrix, (temp_frame_width, temp_frame_height))
-		inverse_mask_frame = cv2.erode(inverse_mask_frame, numpy.ones((2, 2)))
+		inverse_mask_frame = cv2.erode(inverse_mask_frame, np.ones((2, 2)))
 		inverse_mask_border = inverse_mask_frame * inverse_crop_frame
-		inverse_mask_area = numpy.sum(inverse_mask_frame) // 3
+		inverse_mask_area = np.sum(inverse_mask_frame) // 3
 		inverse_mask_edge = int(inverse_mask_area ** 0.5) // 20
 		inverse_mask_radius = inverse_mask_edge * 2
-		inverse_mask_center = cv2.erode(inverse_mask_frame, numpy.ones((inverse_mask_radius, inverse_mask_radius)))
+		inverse_mask_center = cv2.erode(inverse_mask_frame, np.ones((inverse_mask_radius, inverse_mask_radius)))
 		inverse_mask_blur_size = inverse_mask_edge * 2 + 1
 		inverse_mask_blur_area = cv2.GaussianBlur(inverse_mask_center, (inverse_mask_blur_size, inverse_mask_blur_size), 0)
 		temp_frame = inverse_mask_blur_area * inverse_mask_border + (1 - inverse_mask_blur_area) * temp_frame
-		temp_frame = temp_frame.clip(0, 255).astype(numpy.uint8)
+		temp_frame = temp_frame.clip(0, 255).astype(np.uint8)
 		return temp_frame
 
 
