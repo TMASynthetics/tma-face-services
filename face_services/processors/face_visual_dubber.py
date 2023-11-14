@@ -43,7 +43,7 @@ class FaceVisualDubber:
 
 		w2l = W2l(self.source_video.path, self.target_audio.path, 'wav2lip', True, 2, 0, 0, 0,0, None)
 		w2l.execute()
-		w2luhq = Wav2LipUHQ(self.source_video.path, "GFPGAN", 15, 15, 15, True, None, 2, 0.75, True)
+		w2luhq = Wav2LipUHQ(self.source_video.path, "GFPGAN", 15, 15, 15, True, None, 2, 80, True)
 		w2luhq.execute()
 
 

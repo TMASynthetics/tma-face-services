@@ -52,7 +52,7 @@ class FaceEnhancer:
 				if frame_processor_input.name == 'input':
 					frame_processor_inputs[frame_processor_input.name] = crop_frame
 				if frame_processor_input.name == 'weight':
-					frame_processor_inputs[frame_processor_input.name] = numpy.array([ 1 ], dtype = numpy.double)
+					frame_processor_inputs[frame_processor_input.name] = np.array([ 1 ], dtype = np.double)
 			crop_frame = self.model.run(None, frame_processor_inputs)[0][0]
 			crop_frame = self.normalize_crop_frame(crop_frame)
 			paste_frame = self.paste_back(enhanced_frame, crop_frame, affine_matrix)

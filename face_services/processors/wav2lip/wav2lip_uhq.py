@@ -175,6 +175,11 @@ class Wav2LipUHQ:
             w2l_frame_to_restore = cv2.cvtColor(w2l_frame, cv2.COLOR_BGR2RGB)
             image_restored = self.face_enhancer.run(w2l_frame_to_restore, blend_percentage=self.code_former_weight)
 
+            # cv2.namedWindow('image_restored', 0)
+            # cv2.imshow('image_restored', image_restored)
+            # cv2.waitKey(1)
+            # print()
+
             image_restored2 = cv2.cvtColor(image_restored, cv2.COLOR_RGB2BGR)
             cv2.imwrite(face_enhanced_path + "face_restore_" + f_number + ".png", image_restored2)
             image_restored_gray = cv2.cvtColor(image_restored2, cv2.COLOR_RGB2GRAY)
