@@ -21,7 +21,7 @@ class W2l:
         self.checkpoint = checkpoint
         self.mel_step_size = 16
         self.face_det_batch_size = 16
-        self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
+        self.device = 'cuda' if torch.cuda.is_available() else 'mps'
         self.pads = [pad_top, pad_bottom, pad_left, pad_right]
         self.face_swap_img = face_swap_img
         self.nosmooth = nosmooth
@@ -159,7 +159,7 @@ class W2l:
         if self.device == 'cuda':
             checkpoint = torch.load(checkpoint_path)
         else:
-            checkpoint = torch.load(checkpoint_path, map_location=lambda storage, loc: storage)
+            checkpoint = torch.load(checkpoint_path, map_location='mps')
         # shared.cmd_opts.disable_safe_unpickle = False
         return checkpoint
 
