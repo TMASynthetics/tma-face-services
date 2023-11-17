@@ -31,7 +31,7 @@ class FaceVisualDubber:
 		if not os.path.exists(self.folder_path):
 			os.makedirs(self.folder_path)
 
-		for folder in ['frames', 'faces']:
+		for folder in ['frames', 'faces', 'audio', 'output', 'debug']:
 			if not os.path.exists(os.path.join(self.folder_path, folder)):
 				os.makedirs(os.path.join(self.folder_path, folder))
 	
@@ -41,34 +41,11 @@ class FaceVisualDubber:
 		logging.info('VisualDubber - Run')
 
 
-		w2l = W2l(self.source_video.path, self.target_audio.path, 'wav2lip', True, 2, 0, 0, 0,0, None)
+		w2l = W2l(self.source_video.path, self.target_audio.path, 'wav2lip', True, 2, 0, 20, 0, 0, None, self.folder_path)
 		w2l.execute()
-		w2luhq = Wav2LipUHQ(self.source_video.path, "GFPGAN", 15, 15, 15, True, None, 2, 80, True)
-		w2luhq.execute()
+		# w2luhq = Wav2LipUHQ(self.source_video.path, "GFPGAN", 15, 15, 15, True, None, 2, 80, self.folder_path, False)
+		# w2luhq.execute()
 
-
-		# for frame_idx in tqdm(range(self.source_video.frame_number)):
-		# 	current_frame = self.source_video.get_frame_position_by_index(frame_idx)
-		# 	cv2.imwrite(os.path.join(self.folder_path, 'frames', str(frame_idx)+'.png'), current_frame)
-		# 	detected_faces = self.face_detector.run(current_frame)
-		# 	if len(detected_faces) > 0:
-		# 		source_face = serialize_faces_analysis(detected_faces)[0]
-		# 		with open(os.path.join(self.folder_path, 'faces', str(frame_idx)+'.json'), 'w') as f:
-		# 			json.dump(source_face, f)
-		# 	else:
-		# 		logging.info('VisualDubber - No face detected')
-		# 	landmarks = self.face_detector.get_face_3d_features_by_names(detected_faces[0], features_name=['mouth'])
-		# 	points = []
-		# 	for keypoint in landmarks:
-		# 		points.append([int(keypoint[0]), int(keypoint[1])])
-		# 	cv2.fillPoly(current_frame, pts=[np.array(points)], color=(255, 0, 0))
-
-		# 	cv2.namedWindow('FaceVisualDubber', 0)
-		# 	cv2.imshow('FaceVisualDubber', current_frame)
-		# 	cv2.waitKey(1)
-
-
-		# 	print()
 
 		self.clean_and_close()
 
@@ -77,6 +54,7 @@ class FaceVisualDubber:
 
 	def clean_and_close(self):
 		logging.info('VisualDubber - Clean and close')
+		shutil.move(os.path.join(self.folder_path, "output", "result_voice.mp4"), self.session_id + '.mp4')
 		if os.path.exists(self.folder_path):
 			shutil.rmtree(self.folder_path)
 

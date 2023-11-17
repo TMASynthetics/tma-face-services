@@ -22,5 +22,6 @@ RUN pip install --no-cache-dir --upgrade -r /code/requirements.txt
 
 # 
 COPY ./face_services /code/face_services
+
 # 
 CMD ["uvicorn", "face_services.app:app", "--host", "0.0.0.0", "--port", "80"]

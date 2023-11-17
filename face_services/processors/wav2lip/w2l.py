@@ -9,7 +9,9 @@ from pkg_resources import resource_filename
 
 
 class W2l:
-    def __init__(self, face, audio, checkpoint, nosmooth, resize_factor, pad_top, pad_bottom, pad_left, pad_right, face_swap_img):
+    def __init__(self, face, audio, checkpoint, nosmooth, 
+                 resize_factor, pad_top, pad_bottom, pad_left, pad_right, 
+                 face_swap_img, output_folder):
         self.wav2lip_folder = os.path.sep.join(os.path.abspath(__file__).split(os.path.sep)[:-1])
         self.static = False
         if os.path.isfile(face) and face.split('.')[1] in ['jpg', 'png', 'jpeg']:
@@ -31,10 +33,11 @@ class W2l:
         self.resize_factor = resize_factor
         self.rotate = False
         self.crop = [0, -1, 0, -1]
-        self.checkpoint_path = self.wav2lip_folder + '/checkpoints/' + self.checkpoint + '.pth'
-        self.outfile = self.wav2lip_folder + '/results/result_voice.mp4'
+        self.checkpoint_path = os.path.join(os.getcwd(), 'face_services', 'models', 'visual_dubber', self.checkpoint + '.pth')
+        self.outfile = output_folder + '/output/result_voice.mp4'
         print('Using {} for inference.'.format(self.device))
         self.ffmpeg_binary = self.find_ffmpeg_binary()
+        self.output_folder = output_folder
 
     def find_ffmpeg_binary(self):
         for package in ['imageio_ffmpeg', 'imageio-ffmpeg']:
@@ -87,7 +90,7 @@ class W2l:
         for rect, image in zip(predictions, images):
             if rect is None:
                 print("Hum : " + str(n))
-                cv2.imwrite(self.wav2lip_folder + '/temp/faulty_frame.jpg',
+                cv2.imwrite(self.output_folder + '/debug/faulty_frame.jpg',
                             image)  # check this frame where the face was not detected.
                 raise ValueError('Face not detected! Ensure the video contains a face in all the frames.')
 
@@ -125,6 +128,10 @@ class W2l:
             face, coords = face_det_results[idx].copy()
 
             face = cv2.resize(face, (self.img_size, self.img_size))
+
+            # cv2.namedWindow('face', 0)
+            # cv2.imshow('face', face)
+            # cv2.waitKey(1)
 
             img_batch.append(face)
             mel_batch.append(m)
@@ -216,10 +223,10 @@ class W2l:
         if not self.audio.endswith('.wav'):
             print('Extracting raw audio...')
             command = [self.ffmpeg_binary, "-y", "-i", self.audio, "-strict", "-2",
-                       self.wav2lip_folder + "/temp/temp.wav"]
+                       self.output_folder + "/audio/temp.wav"]
 
             self.execute_command(command)
-            self.audio = self.wav2lip_folder + '/temp/temp.wav'
+            self.audio = self.output_folder + '/audio/temp.wav'
 
         wav = audio.load_wav(self.audio, 16000)
         mel = audio.melspectrogram(wav)
@@ -256,7 +263,7 @@ class W2l:
                 print("Model loaded")
 
                 frame_h, frame_w = full_frames[0].shape[:-1]
-                out = cv2.VideoWriter(self.wav2lip_folder + '/temp/result.avi',
+                out = cv2.VideoWriter(self.output_folder + '/output/result.avi',
                                       cv2.VideoWriter_fourcc(*'DIVX'), fps, (frame_w, frame_h))
 
             img_batch = torch.FloatTensor(np.transpose(img_batch, (0, 3, 1, 2))).to(self.device)
@@ -281,6 +288,6 @@ class W2l:
         torch.cuda.empty_cache()
         gc.collect()
 
-        command = [self.ffmpeg_binary, "-y", "-i", self.audio, "-i", self.wav2lip_folder + '/temp/result.avi',
+        command = [self.ffmpeg_binary, "-y", "-i", self.audio, "-i", self.output_folder + '/output/result.avi',
                    "-strict", "-2", "-q:v", "1", self.outfile]
         self.execute_command(command)
