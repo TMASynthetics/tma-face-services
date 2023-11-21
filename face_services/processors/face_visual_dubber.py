@@ -16,7 +16,7 @@ from face_services.processors.wav2lip.wav2lip_uhq import Wav2LipUHQ
 
 class FaceVisualDubber:
   
-	def __init__(self, video_source_path, audio_target_path):
+	def __init__(self, video_source_path=None, audio_target_path=None):
 		logging.info('VisualDubber - Initialize')
 		self.source_video = Video(path=video_source_path)
 		self.target_audio = Audio(path=audio_target_path)
@@ -37,7 +37,7 @@ class FaceVisualDubber:
 	
 
 
-	def run(self):
+	def run(self, video_source_path=None, audio_target_path=None):
 		logging.info('VisualDubber - Run')
 
 
@@ -45,11 +45,8 @@ class FaceVisualDubber:
 		w2l.execute()
 		# w2luhq = Wav2LipUHQ(self.source_video.path, "GFPGAN", 15, 15, 15, True, None, 2, 80, self.folder_path, False)
 		# w2luhq.execute()
-
-
-		self.clean_and_close()
-
-		return None
+		
+		return self.clean_and_close()
 	
 
 	def clean_and_close(self):
@@ -57,4 +54,5 @@ class FaceVisualDubber:
 		shutil.move(os.path.join(self.folder_path, "output", "result_voice.mp4"), self.session_id + '.mp4')
 		if os.path.exists(self.folder_path):
 			shutil.rmtree(self.folder_path)
+		return self.session_id + '.mp4'
 

@@ -3,7 +3,7 @@ from typing import Any, Optional, List
 import uuid
 import cv2
 import numpy as np
-from .face_analyzer import FaceDetector
+from .face_detector import FaceDetector
 
 
 class FaceAnonymizer:

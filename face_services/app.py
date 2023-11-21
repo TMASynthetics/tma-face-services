@@ -1,6 +1,6 @@
 import base64
 from fastapi import FastAPI, HTTPException, Query, Response
-from fastapi.responses import RedirectResponse
+from fastapi.responses import FileResponse, RedirectResponse, StreamingResponse
 from pydantic import BaseModel
 import cv2
 import os 
@@ -8,13 +8,21 @@ import numpy as np
 from typing import Annotated, List
 from fastapi import FastAPI, File, UploadFile
 import uvicorn
-from face_services.app_utils import decode_frame, encode_frame_to_bytes, get_optimal_font_scale, IMAGE_MIME_TYPES, IMAGE_SIZE_LIMIT_MB
-from face_services.processors.face_analyzer import FaceDetector
+from fastapi import FastAPI, File, UploadFile
+from tempfile import NamedTemporaryFile
+import httpx
+
+from face_services.app_utils import VIDEO_MIME_TYPES, VIDEO_SIZE_LIMIT_MB, decode_frame, encode_frame_to_bytes, get_optimal_font_scale, IMAGE_MIME_TYPES, IMAGE_SIZE_LIMIT_MB
+from face_services.processors.face_detector import FaceDetector
 from face_services.processors.face_anonymizer import FaceAnonymizer
 from face_services.processors.face_swapper import FaceSwapper
 from face_services.processors.face_enhancer import FaceEnhancer
 
 import logging
+
+from face_services.processors.face_visual_dubber import FaceVisualDubber
+
+
 logging.basicConfig(format='%(asctime)s - %(message)s', level=logging.INFO)
 
 tags_metadata = [
@@ -204,5 +212,41 @@ async def enhance(input_file: UploadFile,
     enhanced_face = app.face_enhancer.run(decode_frame(file_content), model=face_enhancer_model, blend_percentage=blend_percentage, )
     return Response(content=encode_frame_to_bytes(enhanced_face), media_type="image/png")
 
-if __name__ == '__main__':
-    uvicorn.run(app, host='0.0.0.0', port=80)
+@app.post("/testing/visual_dubbing", tags=["Testing"])
+async def enhance(input_file: UploadFile, input_audio: UploadFile):
+
+    # Get the file size (in bytes)
+    input_file.file.seek(0, 2)
+    file_size = input_file.file.tell()
+    # move the cursor back to the beginning
+    await input_file.seek(0)
+    # check the content type (MIME type)
+    file_content_type = input_file.content_type
+    if file_content_type in VIDEO_MIME_TYPES:
+        if file_size > VIDEO_SIZE_LIMIT_MB * 1024 * 1024:
+            # more than VIDEO_SIZE_LIMIT_MB MB
+            raise HTTPException(status_code=400, detail="Video too large, maximum image size is {}MB".format(VIDEO_SIZE_LIMIT_MB))
+    else:
+        raise HTTPException(status_code=400, detail="Invalid file type")
+
+
+    video_temp = NamedTemporaryFile(delete=False)
+    contents = input_file.file.read()
+    with video_temp as f:
+        f.write(contents)
+    input_file.file.close()
+
+    audio_temp = NamedTemporaryFile(delete=False)
+    contents = input_audio.file.read()
+    with audio_temp as f:
+        f.write(contents)
+    input_audio.file.close()
+
+    face_visual_dubber = FaceVisualDubber(video_source_path=video_temp.name, 
+                    audio_target_path=audio_temp.name)
+
+    dubbed_video_path = face_visual_dubber.run()
+    return FileResponse(path=dubbed_video_path, filename='output.mp4', media_type='video/mp4')
+
+
+

@@ -185,3 +185,4 @@ face_services/processors/wav2lip/face_detection/__init__.py
 .DS_Store
 face_services/processors/wav2lip/models/__init__.py
 .DS_Store
+.DS_Store

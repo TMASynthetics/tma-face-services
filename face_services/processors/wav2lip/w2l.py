@@ -14,8 +14,8 @@ class W2l:
                  face_swap_img, output_folder):
         self.wav2lip_folder = os.path.sep.join(os.path.abspath(__file__).split(os.path.sep)[:-1])
         self.static = False
-        if os.path.isfile(face) and face.split('.')[1] in ['jpg', 'png', 'jpeg']:
-            self.static = True
+        # if os.path.isfile(face) and face.split('.')[1] in ['jpg', 'png', 'jpeg']:
+        #     self.static = True
 
         self.img_size = 96
         self.face = face
@@ -187,9 +187,9 @@ class W2l:
         if not os.path.isfile(self.face):
             raise ValueError('--face argument must be a valid path to video/image file')
 
-        elif self.face.split('.')[1] in ['jpg', 'png', 'jpeg']:
-            full_frames = [cv2.imread(self.face)]
-            fps = self.fps
+        # elif self.face.split('.')[1] in ['jpg', 'png', 'jpeg']:
+        #     full_frames = [cv2.imread(self.face)]
+        #     fps = self.fps
 
         else:
             video_stream = cv2.VideoCapture(self.face)
