@@ -1,5 +1,5 @@
 from collections import OrderedDict
-import logging
+from face_services.logger import logger
 from typing import Any, Dict, Optional, List
 import uuid
 from face_services.models.models_list import FACE_ANALYZER_MODELS
@@ -10,7 +10,7 @@ class FaceAnalyzer:
   
 	def __init__(self):
 		self.id = uuid.uuid4()
-		logging.info('FaceAnalyzer {} - Initialize'.format(self.id))
+		logger.info('FaceAnalyzer {} - Initialize'.format(self.id))
 		self.tasks = {}
 		self._models = {}
 		for task in FACE_ANALYZER_MODELS:
@@ -38,7 +38,7 @@ class FaceAnalyzer:
 	
 	
 	def run(self, frame: Frame):
-		logging.info('FaceAnalyzer {} - Run'.format(self.id))
+		logger.info('FaceAnalyzer {} - Run'.format(self.id))
 
 		for task in self.tasks.keys():
 			print(task)

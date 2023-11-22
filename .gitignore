@@ -157,6 +157,7 @@ gfpgan/
 .assets/
 tests/
 .venv/
+outputs/
 face_services/processors/wav2lip/output
 face_services/processors/wav2lip/temp
 face_services/processors/wav2lip/predicator

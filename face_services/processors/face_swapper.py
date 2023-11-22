@@ -1,4 +1,4 @@
-import logging
+from face_services.logger import logger
 from typing import Any, Optional, List
 import threading
 import uuid
@@ -21,7 +21,7 @@ class FaceSwapper:
   
 	def __init__(self, swapper_model=None, enhancer_model=None):
 		self.id = uuid.uuid4()
-		logging.info('FaceSwapper {} - Initialize'.format(self.id))
+		logger.info('FaceSwapper {} - Initialize'.format(self.id))
 		self.model = None
 		self.current_swapper_model_name = self.get_available_models()[0]
 		self.check_current_model(swapper_model)
@@ -33,22 +33,20 @@ class FaceSwapper:
 		return list(FACE_SWAPPER_MODELS.keys())
 
 	def check_current_model(self, model):
-		logging.info('FaceSwapper - Current model is : {}'.format(self.current_swapper_model_name))
-		if model != self.current_swapper_model_name and self.model is not None:
+		logger.info('FaceSwapper - Current model is : {}'.format(self.current_swapper_model_name))
+		if model != self.current_swapper_model_name and self.model is not None and model is not None:
 			if model is not None and model in self.get_available_models():
 				self.current_swapper_model_name = model
-				logging.info('FaceSwapper - Initialize with model : {}'.format(self.current_swapper_model_name))
+				logger.info('FaceSwapper - Initialize with model : {}'.format(self.current_swapper_model_name))
 				self.model = onnxruntime.InferenceSession(FACE_SWAPPER_MODELS[self.current_swapper_model_name]['path'], providers = ['CPUExecutionProvider'])
 			else:
-				logging.info('FaceSwapper - Model : {} not in {}'.format(model, self.get_available_models()))	
+				logger.info('FaceSwapper - Model : {} not in {}'.format(model, self.get_available_models()))	
 		elif self.model is None:
-			logging.info('FaceSwapper - Initialize with model : {}'.format(self.current_swapper_model_name))
+			logger.info('FaceSwapper - Initialize with model : {}'.format(self.current_swapper_model_name))
 			self.model = onnxruntime.InferenceSession(FACE_SWAPPER_MODELS[self.current_swapper_model_name]['path'], providers = ['CPUExecutionProvider'])
-		else:
-			logging.info('FaceSwapper - Current model is already : {}'.format(model))	
 
 	def run(self, img_source, img_target, swapper_model=None, enhancer_model=None, enhancer_blend_percentage=None, source_face_id=1, target_face_ids=[], enhance=False):
-		logging.info('FaceSwapper - Run')
+		logger.info('FaceSwapper - Run')
 		swapped_frame = img_target.copy()
 
 		faces_target = self.face_detector.run(img_target)
@@ -68,7 +66,7 @@ class FaceSwapper:
 
 						model_size = FACE_SWAPPER_MODELS[self.current_swapper_model_name]['size']
 						model_template = FACE_SWAPPER_MODELS[self.current_swapper_model_name]['template']
-						crop_frame, affine_matrix = warp_face(swapped_frame, face_target.kps, model_template, model_size)
+						crop_frame, affine_matrix = warp_face(swapped_frame, face_target.keypoints, model_template, model_size)
 						crop_frame = self.prepare_crop_frame(crop_frame)
 						frame_processor_inputs = {}
 						for frame_processor_input in self.model.get_inputs():
@@ -89,12 +87,12 @@ class FaceSwapper:
 
 			
 			else:
-				logging.info('FaceSwapper - No face with id={} in the source image'.format(source_face_id))
+				logger.info('FaceSwapper - No face with id={} in the source image'.format(source_face_id))
 		else:
-			logging.info('FaceSwapper - No source face detected')
+			logger.info('FaceSwapper - No source face detected')
 
 		if enhance:
-			logging.info('FaceSwapper - Enhance swapped face(s)')
+			logger.info('FaceSwapper - Enhance swapped face(s)')
 			swapped_frame = self.face_enhancer.run(swapped_frame, model=enhancer_model, blend_percentage=enhancer_blend_percentage)
 
 		return swapped_frame

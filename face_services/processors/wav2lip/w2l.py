@@ -1,6 +1,7 @@
 import numpy as np
 import gc
 import cv2, os, face_services.processors.wav2lip.audio as audio
+from face_services.processors.face_enhancer import FaceEnhancer
 import subprocess
 from tqdm import tqdm
 import torch, face_services.processors.wav2lip.face_detection as face_detection
@@ -38,6 +39,9 @@ class W2l:
         print('Using {} for inference.'.format(self.device))
         self.ffmpeg_binary = self.find_ffmpeg_binary()
         self.output_folder = output_folder
+
+
+        self.face_enhancer = FaceEnhancer()
 
     def find_ffmpeg_binary(self):
         for package in ['imageio_ffmpeg', 'imageio-ffmpeg']:
@@ -186,11 +190,9 @@ class W2l:
     def execute(self):
         if not os.path.isfile(self.face):
             raise ValueError('--face argument must be a valid path to video/image file')
-
-        # elif self.face.split('.')[1] in ['jpg', 'png', 'jpeg']:
-        #     full_frames = [cv2.imread(self.face)]
-        #     fps = self.fps
-
+        elif '.' in self.face and self.face.split('.')[1] in ['jpg', 'png', 'jpeg']:
+            full_frames = [cv2.imread(self.face)]
+            fps = self.fps
         else:
             video_stream = cv2.VideoCapture(self.face)
             fps = video_stream.get(cv2.CAP_PROP_FPS)
@@ -279,7 +281,17 @@ class W2l:
                 p = cv2.resize(p.astype(np.uint8), (x2 - x1, y2 - y1))
 
                 f[y1:y2, x1:x2] = p
+
                 out.write(f)
+
+                # enhanced_frame = self.face_enhancer.run(f, model='codeformer', 
+                #                                         blend_percentage=50)
+                # out.write(enhanced_frame)
+
+
+                # cv2.namedWindow('enhanced_frame', 0)
+                # cv2.imshow('enhanced_frame', enhanced_frame)
+                # cv2.waitKey(1)
 
         out.release()
         # release memory

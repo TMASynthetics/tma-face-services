@@ -1,8 +1,11 @@
 import numpy as np
 import cv2
 
+AUDIO_SIZE_LIMIT_MB = 10
 IMAGE_SIZE_LIMIT_MB = 10
 VIDEO_SIZE_LIMIT_MB = 1024
+
+AUDIO_MIME_TYPES = ["audio/mp4", "audio/wav", "audio/x-wav", "audio/mpeg"]
 IMAGE_MIME_TYPES = ["image/jpeg", "image/png", "image/gif", "image/bmp"]
 VIDEO_MIME_TYPES = ["video/x-msvideo", "video/mp4", "video/mpeg", "video/ogg", "video/webm", "video/3gpp", "video/3gpp2"]
 

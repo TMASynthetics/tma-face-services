@@ -3,7 +3,7 @@ import uuid
 import numpy as np
 from face_services.models.models_list import FACE_ENHANCER_MODELS
 from .face_detector import FaceDetector
-import logging
+from face_services.logger import logger
 import onnxruntime
 import cv2
 
@@ -12,7 +12,7 @@ class FaceEnhancer:
   
 	def __init__(self, model=None):
 		self.id = uuid.uuid4()
-		logging.info('FaceEnhancer {} - Initialize'.format(self.id))
+		logger.info('FaceEnhancer {} - Initialize'.format(self.id))
 		self.model = None
 		self.current_model_name = self.get_available_models()[0]
 		self.check_current_model(model)
@@ -23,26 +23,25 @@ class FaceEnhancer:
 		return list(FACE_ENHANCER_MODELS.keys())
 
 	def check_current_model(self, model):
-		logging.info('FaceEnhancer - Current model is : {}'.format(self.current_model_name))
-		if model != self.current_model_name and self.model is not None:
+		if model != self.current_model_name and self.model is not None and model is not None:
 			if model is not None and model in self.get_available_models():
 				self.current_model_name = model
-				logging.info('FaceEnhancer - Initialize with model : {}'.format(self.current_model_name))
+				logger.info('FaceEnhancer {} - Initialize with model : {}'.format(self.id, self.current_model_name))
 				self.model = onnxruntime.InferenceSession(FACE_ENHANCER_MODELS[self.current_model_name]['path'], providers = ['CPUExecutionProvider'])
 			else:
-				logging.info('FaceEnhancer - Model : {} not in {}'.format(model, self.get_available_models()))
+				logger.info('FaceEnhancer {} - Model : {} not in {}'.format(self.id, model, self.get_available_models()))
 		elif self.model is None:
-			logging.info('FaceEnhancer - Initialize with model : {}'.format(self.current_model_name))
+			logger.info('FaceEnhancer {} - Initialize with model : {}'.format(self.id, self.current_model_name))
 			self.model = onnxruntime.InferenceSession(FACE_ENHANCER_MODELS[self.current_model_name]['path'], providers = ['CPUExecutionProvider'])
-		else:
-			logging.info('FaceEnhancer - Current model is already : {}'.format(model))	
-		
+
+
 	def run(self, frame, model: str=None, blend_percentage: int=100):
-		logging.info('FaceEnhancer - Run with blend_percentage : {}%'.format(blend_percentage))
-		
+		logger.info('FaceEnhancer {} - Run with blend_percentage : {}%'.format(self.id, blend_percentage))
+
+		self.check_current_model(model)
+
 		enhanced_frame = frame.copy()
 		analysed_faces = self.face_detector.run(frame)
-		self.check_current_model(model)
 
 		for face in analysed_faces:
 			crop_frame, affine_matrix = self.warp_face(face, enhanced_frame)
