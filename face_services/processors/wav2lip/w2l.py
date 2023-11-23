@@ -7,12 +7,12 @@ from tqdm import tqdm
 import torch, face_services.processors.wav2lip.face_detection as face_detection
 from face_services.processors.wav2lip.models import Wav2Lip
 from pkg_resources import resource_filename
-
+from face_services.logger import logger
 
 class W2l:
     def __init__(self, face, audio, checkpoint, nosmooth, 
                  resize_factor, pad_top, pad_bottom, pad_left, pad_right, 
-                 face_swap_img, output_folder):
+                 face_swap_img, output_folder, id):
         self.wav2lip_folder = os.path.sep.join(os.path.abspath(__file__).split(os.path.sep)[:-1])
         self.static = False
         # if os.path.isfile(face) and face.split('.')[1] in ['jpg', 'png', 'jpeg']:
@@ -24,7 +24,18 @@ class W2l:
         self.checkpoint = checkpoint
         self.mel_step_size = 16
         self.face_det_batch_size = 16
-        self.device = 'cuda' if torch.cuda.is_available() else 'mps'
+
+        self.id = id
+
+        if torch.cuda.is_available():
+            self.device = 'cuda'
+        elif torch.backends.mps.is_available():
+            self.device = 'mps'
+        else:
+            self.device = 'cpu'
+
+        logger.info('VisualDubber {} - Using {} for inference'.format(self.id, self.device))
+
         self.pads = [pad_top, pad_bottom, pad_left, pad_right]
         self.face_swap_img = face_swap_img
         self.nosmooth = nosmooth
@@ -36,11 +47,12 @@ class W2l:
         self.crop = [0, -1, 0, -1]
         self.checkpoint_path = os.path.join(os.getcwd(), 'face_services', 'models', 'visual_dubber', self.checkpoint + '.pth')
         self.outfile = output_folder + '/output/result_voice.mp4'
-        print('Using {} for inference.'.format(self.device))
+
         self.ffmpeg_binary = self.find_ffmpeg_binary()
         self.output_folder = output_folder
 
 
+        # self.status = 
         self.face_enhancer = FaceEnhancer()
 
     def find_ffmpeg_binary(self):
@@ -176,7 +188,7 @@ class W2l:
 
     def load_model(self, path):
         model = Wav2Lip()
-        print("Load checkpoint from: {}".format(path))
+        # print("Load checkpoint from: {}".format(path))
         checkpoint = self._load(path)
         s = checkpoint["state_dict"]
         new_s = {}
@@ -197,7 +209,7 @@ class W2l:
             video_stream = cv2.VideoCapture(self.face)
             fps = video_stream.get(cv2.CAP_PROP_FPS)
 
-            print('Reading video frames...')
+            logger.info('VisualDubber {} - Reading video frames...'.format(self.id))
 
             full_frames = []
             while 1:
@@ -220,10 +232,12 @@ class W2l:
 
                 full_frames.append(frame)
 
-        print("Number of frames available for inference: " + str(len(full_frames)))
+        logger.info('VisualDubber {} - Number of frames available for inference: {}'.format(self.id, len(full_frames)))
 
         if not self.audio.endswith('.wav'):
             print('Extracting raw audio...')
+            logger.info('VisualDubber {} - Extracting raw audio...'.format(self.id))
+
             command = [self.ffmpeg_binary, "-y", "-i", self.audio, "-strict", "-2",
                        self.output_folder + "/audio/temp.wav"]
 
@@ -232,7 +246,7 @@ class W2l:
 
         wav = audio.load_wav(self.audio, 16000)
         mel = audio.melspectrogram(wav)
-        print(mel.shape)
+        # print(mel.shape)
 
         if np.isnan(mel.reshape(-1)).sum() > 0:
             raise ValueError(
@@ -249,17 +263,21 @@ class W2l:
             mel_chunks.append(mel[:, start_idx: start_idx + self.mel_step_size])
             i += 1
 
-        print("Length of mel chunks: {}".format(len(mel_chunks)))
+        logger.info('VisualDubber {} - Length of mel chunks: {}'.format(self.id, len(mel_chunks)))
+
 
         full_frames = full_frames[:len(mel_chunks)]
 
         batch_size = self.wav2lip_batch_size
         gen = self.datagen(full_frames.copy(), mel_chunks)
 
-        for i, (img_batch, mel_batch, frames, coords) in enumerate(tqdm(gen,
-                                                                        total=int(
-                                                                            np.ceil(
-                                                                                float(len(mel_chunks)) / batch_size)))):
+        for i, (img_batch, mel_batch, frames, coords) in enumerate(gen):
+            
+            print('batch : ', i)
+            int(np.ceil(float(len(mel_chunks)) / batch_size))
+            
+
+
             if i == 0:
                 model = self.load_model(self.checkpoint_path)
                 print("Model loaded")
@@ -268,15 +286,20 @@ class W2l:
                 out = cv2.VideoWriter(self.output_folder + '/output/result.avi',
                                       cv2.VideoWriter_fourcc(*'DIVX'), fps, (frame_w, frame_h))
 
+
+
+
             img_batch = torch.FloatTensor(np.transpose(img_batch, (0, 3, 1, 2))).to(self.device)
             mel_batch = torch.FloatTensor(np.transpose(mel_batch, (0, 3, 1, 2))).to(self.device)
 
             with torch.no_grad():
                 pred = model(mel_batch, img_batch)
-
             pred = pred.cpu().numpy().transpose(0, 2, 3, 1) * 255.
 
-            for p, f, c in zip(pred, frames, coords):
+            for j, (p, f, c) in enumerate(zip(pred, frames, coords)):
+
+                print('frame : ', j)
+
                 y1, y2, x1, x2 = c
                 p = cv2.resize(p.astype(np.uint8), (x2 - x1, y2 - y1))
 
@@ -300,6 +323,8 @@ class W2l:
         torch.cuda.empty_cache()
         gc.collect()
 
-        command = [self.ffmpeg_binary, "-y", "-i", self.audio, "-i", self.output_folder + '/output/result.avi',
+        command = [self.ffmpeg_binary, "-analyzeduration", "2147483647", 
+                   "-probesize", "2147483647", 
+                   "-y", "-i", self.audio, "-i", self.output_folder + '/output/result.avi',
                    "-strict", "-2", "-q:v", "1", self.outfile]
         self.execute_command(command)

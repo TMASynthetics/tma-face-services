@@ -1,5 +1,5 @@
 import base64
-from fastapi import FastAPI, HTTPException, Query, Response
+from fastapi import BackgroundTasks, Depends, FastAPI, HTTPException, Query, Response
 from fastapi.responses import FileResponse, RedirectResponse, StreamingResponse
 from pydantic import BaseModel
 import cv2
@@ -11,9 +11,8 @@ import uvicorn
 from fastapi import FastAPI, File, UploadFile
 from tempfile import NamedTemporaryFile
 
-
-from face_services.app_utils import AUDIO_MIME_TYPES, AUDIO_SIZE_LIMIT_MB, VIDEO_MIME_TYPES, VIDEO_SIZE_LIMIT_MB, decode_frame, encode_frame_to_bytes, get_optimal_font_scale, IMAGE_MIME_TYPES, IMAGE_SIZE_LIMIT_MB
-from face_services import logger
+from face_services.logger import logger
+from face_services.app_utils import AUDIO_MIME_TYPES, AUDIO_SIZE_LIMIT_MB, VIDEO_MIME_TYPES, VIDEO_SIZE_LIMIT_MB, decode_frame, encode_frame_to_bytes, get_optimal_font_scale, IMAGE_MIME_TYPES, IMAGE_SIZE_LIMIT_MB, perform_visual_dubbing
 from face_services.processors.face_detector import FaceDetector
 from face_services.processors.face_anonymizer import FaceAnonymizer
 from face_services.processors.face_swapper import FaceSwapper
@@ -48,12 +47,9 @@ def app_redirect(_):
 
 @app.on_event("startup")
 async def startup_event():
-    app.face_analyzer = FaceDetector()
-    app.face_anonymiser = FaceAnonymizer()
-    app.face_swapper = FaceSwapper()
-    app.face_enhancer = FaceEnhancer()
+    logger.info('Start')
 
-@app.post("/testing/detect", tags=["Testing"])
+@app.post("/test/detect", tags=["Test"])
 async def detect(input_file: UploadFile):
 
     # Get the file size (in bytes)
@@ -76,7 +72,7 @@ async def detect(input_file: UploadFile):
     file_content = await input_file.read()
 
     frame = decode_frame(file_content)
-    detected_faces = app.face_analyzer.run(frame)
+    detected_faces = app.face_detector.run(frame)
 
     for detected_face in detected_faces:
         cv2.rectangle(frame,(int(detected_face.bbox[0]), int(detected_face.bbox[1])), (int(detected_face.bbox[2]), int(detected_face.bbox[3])), (0, 255, 0), 2)
@@ -99,7 +95,7 @@ async def detect(input_file: UploadFile):
 
     return Response(content=encode_frame_to_bytes(frame), media_type="image/png")
 
-@app.post("/testing/anonymize", tags=["Testing"])
+@app.post("/test/anonymize", tags=["Test"])
 async def anonymize(input_file: UploadFile, 
                     face_ids: List[int] = Query(None, description='The ids of the faces to anonymise. Use the detect service to identify the faces.'),
                     method: str | None = Query(default='blur', enum=["blur", "pixelate"], description='The method used to anonymise faces.'), 
@@ -128,7 +124,7 @@ async def anonymize(input_file: UploadFile,
     anonymised_face = app.face_anonymiser.run(decode_frame(file_content), face_ids=face_ids, method=method, blur_factor=blur_factor, pixel_blocks=pixel_blocks)
     return Response(content=encode_frame_to_bytes(anonymised_face), media_type="image/png")
 
-@app.post("/testing/swap", tags=["Testing"])
+@app.post("/test/swap", tags=["Test"])
 async def swap(source_image_file: UploadFile, target_image_file: UploadFile, 
                source_face_id: int = Query(default=1, ge=1, le=100, description='The id of the face in the source frame use to replace the target face(s). Use the detect service to identify the faces.'),
                target_face_ids: List[int] = Query(None, description='The ids of the faces in the target frame to swap by the source face. Use the detect service to identify the faces.'),
@@ -181,7 +177,7 @@ async def swap(source_image_file: UploadFile, target_image_file: UploadFile,
     
     return Response(content=encode_frame_to_bytes(swapped_face), media_type="image/png")
 
-@app.post("/testing/enhance", tags=["Testing"])
+@app.post("/test/enhance", tags=["Test"])
 async def enhance(input_file: UploadFile,
                   face_enhancer_model: str = Query(default=FaceEnhancer().get_available_models()[0], enum=FaceEnhancer().get_available_models(), description='The model to use for performing the face enhancement.'),
                   blend_percentage: int = Query(default=100, ge=0, le=100, description='The ratio between the original face and the enhanced one. Higher values results in finer face.')):
@@ -207,24 +203,29 @@ async def enhance(input_file: UploadFile,
     enhanced_face = app.face_enhancer.run(decode_frame(file_content), model=face_enhancer_model, blend_percentage=blend_percentage, )
     return Response(content=encode_frame_to_bytes(enhanced_face), media_type="image/png")
 
-@app.post("/testing/visual_dubbing", tags=["Testing"])
-async def visual_dubbing(input_file: UploadFile, 
-                         input_audio: UploadFile,
+
+
+
+
+@app.post("/visual_dubbing/process", tags=["Visual Dubbing"])
+async def visual_dubbing_process(input_video_or_image: UploadFile, 
+                         target_audio: UploadFile,
+                         background_tasks: BackgroundTasks,
                          visual_dubbing_model: str = Query(default=FaceVisualDubber().get_available_models()[0], 
                                                            enum=FaceVisualDubber().get_available_models(), description='The model to use for performing the visual dubbing.')):
 
     # Get the file size (in bytes)
-    input_file.file.seek(0, 2)
-    file_size = input_file.file.tell()
+    input_video_or_image.file.seek(0, 2)
+    file_size = input_video_or_image.file.tell()
     # move the cursor back to the beginning
-    await input_file.seek(0)
+    await input_video_or_image.seek(0)
     # check the content type (MIME type)
-    file_content_type = input_file.content_type
+    file_content_type = input_video_or_image.content_type
 
     if file_content_type in VIDEO_MIME_TYPES:
         if file_size > VIDEO_SIZE_LIMIT_MB * 1024 * 1024:
             # more than VIDEO_SIZE_LIMIT_MB MB
-            raise HTTPException(status_code=400, detail="Video ◊ too large, maximum video size is {}MB".format(VIDEO_SIZE_LIMIT_MB))
+            raise HTTPException(status_code=400, detail="Video file too large, maximum video size is {}MB".format(VIDEO_SIZE_LIMIT_MB))
     elif file_content_type in IMAGE_MIME_TYPES:
         if file_size > IMAGE_SIZE_LIMIT_MB * 1024 * 1024:
             # more than IMAGE_SIZE_LIMIT_MB MB
@@ -234,12 +235,12 @@ async def visual_dubbing(input_file: UploadFile,
 
 
     # Get the file size (in bytes)
-    input_audio.file.seek(0, 2)
-    file_size = input_audio.file.tell()
+    target_audio.file.seek(0, 2)
+    file_size = target_audio.file.tell()
     # move the cursor back to the beginning
-    await input_audio.seek(0)
+    await target_audio.seek(0)
     # check the content type (MIME type)
-    file_content_type = input_audio.content_type
+    file_content_type = target_audio.content_type
 
     if file_content_type in AUDIO_MIME_TYPES:
         if file_size > AUDIO_SIZE_LIMIT_MB * 1024 * 1024:
@@ -250,25 +251,37 @@ async def visual_dubbing(input_file: UploadFile,
 
     # Create temporary video or image file
     video_temp = NamedTemporaryFile(delete=False)
-    contents = input_file.file.read()
+    contents = input_video_or_image.file.read()
     with video_temp as f:
         f.write(contents)
-    input_file.file.close()
+    input_video_or_image.file.close()
 
     # Create temporary audio file
     audio_temp = NamedTemporaryFile(delete=False)
-    contents = input_audio.file.read()
+    contents = target_audio.file.read()
     with audio_temp as f:
         f.write(contents)
-    input_audio.file.close()
+    target_audio.file.close()
 
     face_visual_dubber = FaceVisualDubber(video_source_path=video_temp.name, 
                                           audio_target_path=audio_temp.name)
-    dubbed_video_path = face_visual_dubber.run(model=visual_dubbing_model)
+    
+    background_tasks.add_task(perform_visual_dubbing, face_visual_dubber, visual_dubbing_model)
+    return {"id": face_visual_dubber.id}
 
-    return FileResponse(path=dubbed_video_path, 
-                        filename=input_file.filename.split('.')[0] + '_dubbed.mp4', 
+
+@app.post("/visual_dubbing/status", tags=["Visual Dubbing"])
+async def visual_dubbing_status(id: str): 
+    # return {"message": "Message sent"}
+    return FileResponse(path=os.path.join('outputs', id + '.mp4'), 
+                        filename=id + '.mp4', 
                         media_type='video/mp4')
+
+
+
+
+
+
 
 
 

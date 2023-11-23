@@ -45,7 +45,7 @@ class FaceSwapper:
 			logger.info('FaceSwapper - Initialize with model : {}'.format(self.current_swapper_model_name))
 			self.model = onnxruntime.InferenceSession(FACE_SWAPPER_MODELS[self.current_swapper_model_name]['path'], providers = ['CPUExecutionProvider'])
 
-	def run(self, img_source, img_target, swapper_model=None, enhancer_model=None, enhancer_blend_percentage=None, source_face_id=1, target_face_ids=[], enhance=False):
+	def run(self, img_source, img_target, swapper_model=None, enhancer_model=None, enhancer_blend_percentage=80, source_face_id=1, target_face_ids=[], enhance=False):
 		logger.info('FaceSwapper - Run')
 		swapped_frame = img_target.copy()
 

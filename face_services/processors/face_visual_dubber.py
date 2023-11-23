@@ -43,7 +43,11 @@ class FaceVisualDubber:
 			model = self.get_available_models()[0]
 		logger.info('VisualDubber {} - Current model is : {}'.format(self.id, model))
 
-		w2l = W2l(self.source_video.path, self.target_audio.path, model, True, 1, 0, 20, 0, 0, None, self.folder_path)
+		w2l = W2l(self.source_video.path, 
+			self.target_audio.path, 
+			model, True, 1, 0, 20, 0, 0, None, 
+			self.folder_path, self.id)
+		
 		w2l.execute()
 		return self.clean_and_close()
 

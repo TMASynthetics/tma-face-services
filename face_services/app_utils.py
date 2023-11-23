@@ -25,3 +25,6 @@ def get_optimal_font_scale(text, width):
         if (new_width <= width):
             return scale/ratio, textSize[0][1]
     return 1, 60
+
+def perform_visual_dubbing(face_visual_dubber, visual_dubbing_model):
+    dubbed_video_path = face_visual_dubber.run(model=visual_dubbing_model)

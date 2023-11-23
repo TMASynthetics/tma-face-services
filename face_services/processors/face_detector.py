@@ -69,7 +69,7 @@ class FaceDetector:
 		return embedding
 
 	def identify_faces(self, detected_faces):
-		logger.info('FaceDetector {} - Identify faces'.format(self.id))
+		# logger.info('FaceDetector {} - Identify faces'.format(self.id))
 		for idx, detected_face in enumerate(detected_faces):
 			detected_face.id = idx + 1
 		return detected_faces
