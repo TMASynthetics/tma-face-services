@@ -1,3 +1,4 @@
+from face_services.components.video import Video
 from face_services.logger import logger
 from typing import Any, Optional, List
 import threading
@@ -20,13 +21,17 @@ from ..processors.face_enhancer import FaceEnhancer
 class FaceSwapper:
   
 	def __init__(self, swapper_model=None, enhancer_model=None):
-		self.id = uuid.uuid4()
+		self.id = str(uuid.uuid4())
 		logger.info('FaceSwapper {} - Initialize'.format(self.id))
 		self.model = None
 		self.current_swapper_model_name = self.get_available_models()[0]
 		self.check_current_model(swapper_model)
 		self.face_detector = FaceDetector()
 		self.face_enhancer = FaceEnhancer(model=enhancer_model)
+
+
+	def set_source_face(self, img_source):
+		self.faces_source = self.face_detector.run(img_source)
 
 	@staticmethod
 	def get_available_models():
@@ -45,19 +50,28 @@ class FaceSwapper:
 			logger.info('FaceSwapper - Initialize with model : {}'.format(self.current_swapper_model_name))
 			self.model = onnxruntime.InferenceSession(FACE_SWAPPER_MODELS[self.current_swapper_model_name]['path'], providers = ['CPUExecutionProvider'])
 
-	def run(self, img_source, img_target, swapper_model=None, enhancer_model=None, enhancer_blend_percentage=80, source_face_id=1, target_face_ids=[], enhance=False):
+	def run(self, img_target: Frame, 
+		 img_source: Frame = None, 
+		 swapper_model=None, enhancer_model=None, 
+		 enhancer_blend_percentage=80, 
+		 source_face_id=1, 
+		 target_face_ids=[], 
+		 enhance=False):
+		
 		logger.info('FaceSwapper - Run')
 		swapped_frame = img_target.copy()
 
 		faces_target = self.face_detector.run(img_target)
-		faces_source = self.face_detector.run(img_source)
+		if img_source:
+			self.faces_source = self.face_detector.run(img_source)
+
 		self.check_current_model(swapper_model)
 
 		if target_face_ids is None:
 			target_face_ids=[]
 
-		if len(faces_source) > 0:
-			face_source = FaceDetector.get_face_by_id(faces_source, source_face_id)
+		if len(self.faces_source) > 0:
+			face_source = FaceDetector.get_face_by_id(self.faces_source, source_face_id)
 			if face_source is not None:
 				for face_target in faces_target:
 					if face_target.id in target_face_ids or len(target_face_ids)==0 :

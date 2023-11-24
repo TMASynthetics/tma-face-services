@@ -1,4 +1,5 @@
 import base64
+import json
 from fastapi import BackgroundTasks, Depends, FastAPI, HTTPException, Query, Response
 from fastapi.responses import FileResponse, RedirectResponse, StreamingResponse
 from pydantic import BaseModel
@@ -12,7 +13,7 @@ from fastapi import FastAPI, File, UploadFile
 from tempfile import NamedTemporaryFile
 
 from face_services.logger import logger
-from face_services.app_utils import AUDIO_MIME_TYPES, AUDIO_SIZE_LIMIT_MB, VIDEO_MIME_TYPES, VIDEO_SIZE_LIMIT_MB, decode_frame, encode_frame_to_bytes, get_optimal_font_scale, IMAGE_MIME_TYPES, IMAGE_SIZE_LIMIT_MB, perform_visual_dubbing
+from face_services.app_utils import jobs_database, AUDIO_MIME_TYPES, AUDIO_SIZE_LIMIT_MB, VIDEO_MIME_TYPES, VIDEO_SIZE_LIMIT_MB, decode_frame, encode_frame_to_bytes, get_optimal_font_scale, IMAGE_MIME_TYPES, IMAGE_SIZE_LIMIT_MB, perform_face_swapping, perform_visual_dubbing
 from face_services.processors.face_detector import FaceDetector
 from face_services.processors.face_anonymizer import FaceAnonymizer
 from face_services.processors.face_swapper import FaceSwapper
@@ -207,6 +208,87 @@ async def enhance(input_file: UploadFile,
 
 
 
+
+@app.post("/swap/process", tags=["Face Swapping"])
+async def swap_process(background_tasks: BackgroundTasks, 
+               target_video_or_image: UploadFile, 
+               source_image_file: UploadFile, 
+               source_face_id: int = Query(default=1, ge=1, le=100, description='The id of the face in the source frame use to replace the target face(s). Use the detect service to identify the faces.'),
+               target_face_ids: List[int] = Query(None, description='The ids of the faces in the target frame to swap by the source face. Use the detect service to identify the faces.'),
+               face_swapper_model: str = Query(default=FaceSwapper().get_available_models()[0], enum=FaceSwapper().get_available_models(), description='The model to use for performing the face swapping.'),    
+               enhance: bool = Query(default=False, enum=[False, True], description='Activate in order to enhance the quality of the swapped face(s).'),
+               face_enhancer_model: str = Query(default=FaceEnhancer().get_available_models()[0], enum=FaceEnhancer().get_available_models(), description='The model to use for performing the face enhancement.'),
+               enhancer_blend_percentage: int = Query(default=100, ge=0, le=100, description='The ratio between the original face and the enhanced one. Higher values results in finer face.')):
+                 
+
+    # Get the file size (in bytes)
+    target_video_or_image.file.seek(0, 2)
+    file_size = target_video_or_image.file.tell()
+    # move the cursor back to the beginning
+    await target_video_or_image.seek(0)
+    # check the content type (MIME type)
+    file_content_type = target_video_or_image.content_type
+
+    if file_content_type in VIDEO_MIME_TYPES:
+        if file_size > VIDEO_SIZE_LIMIT_MB * 1024 * 1024:
+            # more than VIDEO_SIZE_LIMIT_MB MB
+            raise HTTPException(status_code=400, detail="Video file too large, maximum video size is {}MB".format(VIDEO_SIZE_LIMIT_MB))
+    elif file_content_type in IMAGE_MIME_TYPES:
+        if file_size > IMAGE_SIZE_LIMIT_MB * 1024 * 1024:
+            # more than IMAGE_SIZE_LIMIT_MB MB
+            raise HTTPException(status_code=400, detail="Image file too large, maximum image size is {}MB".format(IMAGE_SIZE_LIMIT_MB)) 
+    else:
+        raise HTTPException(status_code=400, detail="Invalid file type")
+
+
+    # Get the file size (in bytes)
+    source_image_file.file.seek(0, 2)
+    file_size = source_image_file.file.tell()
+    # move the cursor back to the beginning
+    await source_image_file.seek(0)
+    # check the content type (MIME type)
+    file_content_type = source_image_file.content_type
+
+    if file_content_type in IMAGE_MIME_TYPES:
+        if file_size > IMAGE_SIZE_LIMIT_MB * 1024 * 1024:
+            # more than IMAGE_SIZE_LIMIT_MB MB
+            raise HTTPException(status_code=400, detail="Image file too large, maximum image size is {}MB".format(IMAGE_SIZE_LIMIT_MB)) 
+    else:
+        raise HTTPException(status_code=400, detail="Invalid file type")
+    
+
+    # Create temporary video or image file
+    target_temp = NamedTemporaryFile(delete=False)
+    contents = target_video_or_image.file.read()
+    with target_temp as f:
+        f.write(contents)
+    target_video_or_image.file.close()
+
+    # Create temporary video or image file
+    source_temp = NamedTemporaryFile(delete=False)
+    contents = source_image_file.file.read()
+    with source_temp as f:
+        f.write(contents)
+    source_image_file.file.close()
+    face_swapper = FaceSwapper(swapper_model=face_swapper_model, enhancer_model=face_enhancer_model)
+    
+    background_tasks.add_task(perform_face_swapping, face_swapper, source_temp.name, target_temp.name, 
+                          target_face_ids, source_face_id, face_swapper_model, 
+                          face_enhancer_model, enhance, enhancer_blend_percentage)
+    return {"id": face_swapper.id}
+
+
+@app.post("/swap/status", tags=["Face Swapping"])
+async def swap_status(id: str): 
+    return jobs_database[id]
+
+    # return FileResponse(path=os.path.join('outputs', id + '.mp4'), 
+    #                     filename=id + '.mp4', 
+    #                     media_type='video/mp4')
+
+
+
+
 @app.post("/visual_dubbing/process", tags=["Visual Dubbing"])
 async def visual_dubbing_process(input_video_or_image: UploadFile, 
                          target_audio: UploadFile,
@@ -268,7 +350,6 @@ async def visual_dubbing_process(input_video_or_image: UploadFile,
     
     background_tasks.add_task(perform_visual_dubbing, face_visual_dubber, visual_dubbing_model)
     return {"id": face_visual_dubber.id}
-
 
 @app.post("/visual_dubbing/status", tags=["Visual Dubbing"])
 async def visual_dubbing_status(id: str): 
