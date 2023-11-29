@@ -1,3 +1,4 @@
+import time
 import numpy as np
 import gc
 import cv2, os, face_services.processors.wav2lip.audio as audio
@@ -8,6 +9,7 @@ import torch, face_services.processors.wav2lip.face_detection as face_detection
 from face_services.processors.wav2lip.models import Wav2Lip
 from pkg_resources import resource_filename
 from face_services.logger import logger
+from face_services.jobs_database import jobs_database
 
 class W2l:
     def __init__(self, face, audio, checkpoint, nosmooth, 
@@ -23,7 +25,7 @@ class W2l:
         self.audio = audio
         self.checkpoint = checkpoint
         self.mel_step_size = 16
-        self.face_det_batch_size = 16
+        self.face_det_batch_size = 1
 
         self.id = id
 
@@ -81,6 +83,9 @@ class W2l:
         return boxes
 
     def face_detect(self, images):
+        
+        start_time = time.time()
+
         detector = face_detection.FaceAlignment(face_detection.LandmarksType._2D,
                                                 flip_input=False, device=self.device)
 
@@ -123,6 +128,9 @@ class W2l:
         results = [[image[y1: y2, x1:x2], (y1, y2, x1, x2)] for image, (x1, y1, x2, y2) in zip(images, boxes)]
 
         del detector
+
+        print("--- %s seconds ---" % (time.time() - start_time))
+
         return results
 
     def datagen(self, frames, mels):
@@ -234,15 +242,15 @@ class W2l:
 
         logger.info('VisualDubber {} - Number of frames available for inference: {}'.format(self.id, len(full_frames)))
 
-        if not self.audio.endswith('.wav'):
-            print('Extracting raw audio...')
-            logger.info('VisualDubber {} - Extracting raw audio...'.format(self.id))
+        # if not self.audio.endswith('.wav'):
+        #     print('Extracting raw audio...')
+        #     logger.info('VisualDubber {} - Extracting raw audio...'.format(self.id))
 
-            command = [self.ffmpeg_binary, "-y", "-i", self.audio, "-strict", "-2",
-                       self.output_folder + "/audio/temp.wav"]
+        #     command = [self.ffmpeg_binary, "-y", "-i", self.audio, "-strict", "-2",
+        #                self.output_folder + "/audio/temp.wav"]
 
-            self.execute_command(command)
-            self.audio = self.output_folder + '/audio/temp.wav'
+        #     self.execute_command(command)
+        #     self.audio = self.output_folder + '/audio/temp.wav'
 
         wav = audio.load_wav(self.audio, 16000)
         mel = audio.melspectrogram(wav)
@@ -273,14 +281,14 @@ class W2l:
 
         for i, (img_batch, mel_batch, frames, coords) in enumerate(gen):
             
-            print('batch : ', i)
+            # print('batch : ', i)
             int(np.ceil(float(len(mel_chunks)) / batch_size))
             
 
 
             if i == 0:
                 model = self.load_model(self.checkpoint_path)
-                print("Model loaded")
+                logger.info('VisualDubber {} - Model loaded'.format(self.id))
 
                 frame_h, frame_w = full_frames[0].shape[:-1]
                 out = cv2.VideoWriter(self.output_folder + '/output/result.avi',
@@ -306,6 +314,8 @@ class W2l:
                 f[y1:y2, x1:x2] = p
 
                 out.write(f)
+
+                jobs_database[self.id]['progress'] = np.round((j+i*self.wav2lip_batch_size)/len(full_frames), 2)
 
                 # enhanced_frame = self.face_enhancer.run(f, model='codeformer', 
                 #                                         blend_percentage=50)

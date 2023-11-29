@@ -23,6 +23,7 @@ def detect(net, img, device):
 
     if 'cuda' in device:
         torch.backends.cudnn.benchmark = True
+    # elif 'mps' in device:
 
     img = torch.from_numpy(img).float().to(device)
     BB, CC, HH, WW = img.size()

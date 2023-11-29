@@ -11,7 +11,7 @@ from face_services.components.video import Video
 from face_services.processors.face_detector import FaceDetector
 from face_services.processors.wav2lip.w2l import W2l
 from face_services.processors.wav2lip.wav2lip_uhq import Wav2LipUHQ
-
+from face_services.jobs_database import jobs_database
 
 class FaceVisualDubber:
   
@@ -49,7 +49,13 @@ class FaceVisualDubber:
 			self.folder_path, self.id)
 		
 		w2l.execute()
-		return self.clean_and_close()
+
+		output_path = self.clean_and_close()
+		
+		jobs_database[self.id]['progress'] = 1
+		jobs_database[self.id]['path'] = output_path
+
+		return output_path
 
 	def clean_and_close(self):
 		logger.info('VisualDubber {} - Clean and close'.format(self.id))

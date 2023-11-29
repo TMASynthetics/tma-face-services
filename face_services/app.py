@@ -50,7 +50,9 @@ def app_redirect(_):
 async def startup_event():
     logger.info('Start')
 
-@app.post("/test/detect", tags=["Test"])
+#################################################################
+# TESTING
+@app.post("/testing/detect", tags=["Testing"])
 async def detect(input_file: UploadFile):
 
     # Get the file size (in bytes)
@@ -96,7 +98,7 @@ async def detect(input_file: UploadFile):
 
     return Response(content=encode_frame_to_bytes(frame), media_type="image/png")
 
-@app.post("/test/anonymize", tags=["Test"])
+@app.post("/testing/anonymize", tags=["Testing"])
 async def anonymize(input_file: UploadFile, 
                     face_ids: List[int] = Query(None, description='The ids of the faces to anonymise. Use the detect service to identify the faces.'),
                     method: str | None = Query(default='blur', enum=["blur", "pixelate"], description='The method used to anonymise faces.'), 
@@ -125,7 +127,7 @@ async def anonymize(input_file: UploadFile,
     anonymised_face = app.face_anonymiser.run(decode_frame(file_content), face_ids=face_ids, method=method, blur_factor=blur_factor, pixel_blocks=pixel_blocks)
     return Response(content=encode_frame_to_bytes(anonymised_face), media_type="image/png")
 
-@app.post("/test/swap", tags=["Test"])
+@app.post("/testing/swap", tags=["Testing"])
 async def swap(source_image_file: UploadFile, target_image_file: UploadFile, 
                source_face_id: int = Query(default=1, ge=1, le=100, description='The id of the face in the source frame use to replace the target face(s). Use the detect service to identify the faces.'),
                target_face_ids: List[int] = Query(None, description='The ids of the faces in the target frame to swap by the source face. Use the detect service to identify the faces.'),
@@ -178,7 +180,7 @@ async def swap(source_image_file: UploadFile, target_image_file: UploadFile,
     
     return Response(content=encode_frame_to_bytes(swapped_face), media_type="image/png")
 
-@app.post("/test/enhance", tags=["Test"])
+@app.post("/testing/enhance", tags=["Testing"])
 async def enhance(input_file: UploadFile,
                   face_enhancer_model: str = Query(default=FaceEnhancer().get_available_models()[0], enum=FaceEnhancer().get_available_models(), description='The model to use for performing the face enhancement.'),
                   blend_percentage: int = Query(default=100, ge=0, le=100, description='The ratio between the original face and the enhanced one. Higher values results in finer face.')):
@@ -203,12 +205,12 @@ async def enhance(input_file: UploadFile,
     file_content = await input_file.read()
     enhanced_face = app.face_enhancer.run(decode_frame(file_content), model=face_enhancer_model, blend_percentage=blend_percentage, )
     return Response(content=encode_frame_to_bytes(enhanced_face), media_type="image/png")
+#################################################################
 
 
 
-
-
-
+#################################################################
+# FACE SWAPPING
 @app.post("/swap/process", tags=["Face Swapping"])
 async def swap_process(background_tasks: BackgroundTasks, 
                target_video_or_image: UploadFile, 
@@ -277,18 +279,24 @@ async def swap_process(background_tasks: BackgroundTasks,
                           face_enhancer_model, enhance, enhancer_blend_percentage)
     return {"id": face_swapper.id}
 
-
 @app.post("/swap/status", tags=["Face Swapping"])
 async def swap_status(id: str): 
     return jobs_database[id]
 
-    # return FileResponse(path=os.path.join('outputs', id + '.mp4'), 
-    #                     filename=id + '.mp4', 
-    #                     media_type='video/mp4')
+@app.post("/swap/get", tags=["Face Swapping"])
+async def swap_get(id: str): 
+    if jobs_database[id]['path']:
+        return FileResponse(path=os.path.join('outputs', id + '.mp4'), 
+                        filename=id + '.mp4', 
+                        media_type='video/mp4',
+                        headers=jobs_database[id])
+    else:
+        return 'Face Swapping processing job {} is not finished. Current progress is {}%.'.format(id, str(int(jobs_database[id]['progress'] * 100)))
+#################################################################
 
 
-
-
+#################################################################
+# VISUAL DUBBING
 @app.post("/visual_dubbing/process", tags=["Visual Dubbing"])
 async def visual_dubbing_process(input_video_or_image: UploadFile, 
                          target_audio: UploadFile,
@@ -353,11 +361,17 @@ async def visual_dubbing_process(input_video_or_image: UploadFile,
 
 @app.post("/visual_dubbing/status", tags=["Visual Dubbing"])
 async def visual_dubbing_status(id: str): 
-    # return {"message": "Message sent"}
-    return FileResponse(path=os.path.join('outputs', id + '.mp4'), 
+    return jobs_database[id] if id in jobs_database.keys() else 'No id : {}'.format(id)
+
+@app.post("/visual_dubbing/get", tags=["Visual Dubbing"])
+async def visual_dubbing_get(id: str): 
+    if jobs_database[id]['path']:
+        return FileResponse(path=os.path.join('outputs', id + '.mp4'), 
                         filename=id + '.mp4', 
                         media_type='video/mp4')
-
+    else:
+        return 'Visual Dubbing processing job {} is not finished. Current progress is {}%.'.format(id, str(int(jobs_database[id]['progress'] * 100)))
+#################################################################
 
 
 

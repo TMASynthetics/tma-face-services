@@ -8,12 +8,16 @@ class Video:
         self._video = cv2.VideoCapture(self.path)
 
     @property    
+    def is_video(self) -> bool:
+        return int(self._video.get(cv2.CAP_PROP_FRAME_COUNT)) > 0
+    
+    @property    
     def fps(self) -> float:
         return self._video.get(cv2.CAP_PROP_FPS)
     
     @property    
     def frame_number(self) -> int:
-        return int(self._video.get(cv2.CAP_PROP_FRAME_COUNT))
+        return 1 if int(self._video.get(cv2.CAP_PROP_FRAME_COUNT)) < 0 else int(self._video.get(cv2.CAP_PROP_FRAME_COUNT))
 
     @property    
     def width(self) -> int:
