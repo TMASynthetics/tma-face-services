@@ -242,23 +242,12 @@ class W2l:
 
         logger.info('VisualDubber {} - Number of frames available for inference: {}'.format(self.id, len(full_frames)))
 
-        # if not self.audio.endswith('.wav'):
-        #     print('Extracting raw audio...')
-        #     logger.info('VisualDubber {} - Extracting raw audio...'.format(self.id))
 
-        #     command = [self.ffmpeg_binary, "-y", "-i", self.audio, "-strict", "-2",
-        #                self.output_folder + "/audio/temp.wav"]
-
-        #     self.execute_command(command)
-        #     self.audio = self.output_folder + '/audio/temp.wav'
 
         wav = audio.load_wav(self.audio, 16000)
         mel = audio.melspectrogram(wav)
-        # print(mel.shape)
+    
 
-        if np.isnan(mel.reshape(-1)).sum() > 0:
-            raise ValueError(
-                'Mel contains nan! Using a TTS voice? Add a small epsilon noise to the wav file and try again')
 
         mel_chunks = []
         mel_idx_multiplier = 80. / fps

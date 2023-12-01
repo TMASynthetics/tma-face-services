@@ -1,6 +1,10 @@
 import logging
+import os
+from typing import List
 import cv2
 import numpy as np
+import subprocess
+
 
 class Video:
     def __init__(self, path) -> None:
@@ -48,3 +52,45 @@ class Video:
     def get_frame(self) -> np.array:
         _, frame = self._video.read()
         return frame
+    
+    def get_frames_from_video(self, index_start=1, index_end=None) -> List:
+        frames = []
+        if not index_end:
+            index_end = self.frame_number
+        for index in range(index_start, index_end):
+            frames.append(self.get_frame_position_by_index(index))
+        return frames
+    
+    def get_frames_from_files(self, folder, index_start=1, index_end=None, file_extension: str='png') -> List:
+        frames = []
+        if not index_end:
+            index_end = self.frame_number
+        for index in range(index_start, index_end):
+            frames.append(cv2.imread(os.path.join(folder, 'frame_{}.{}'.format(index, file_extension))))
+        return frames
+    
+    @staticmethod  
+    def extract_and_save_all_frames(video_path, output_folder, file_extension: str='png'):
+        # Create the output folder if it doesn't exist
+        os.makedirs(output_folder, exist_ok=True)
+        # Run FFmpeg command to extract frames
+        subprocess.call(['ffmpeg', '-i', video_path, '-q:v', '1', f'{output_folder}/frame_%d.' + Video.check_frame_extension(file_extension)])
+
+    @staticmethod    
+    def check_frame_extension(file_extension) -> int:
+        return file_extension if file_extension in ['png', 'jpg', 'bmp'] else 'png'
+
+
+# ffmpeg -framerate 30 -pattern_type glob -i '*.png' \
+#   -c:v libx264 -pix_fmt yuv420p out.mp4
+
+
+    # @staticmethod  
+    # def merge_video_and_audio(video_path, audio_path, output_file_path):
+    #     subprocess.call(['ffmpeg', '-i', video_path, '-q:v', '1', f'{output_folder}/frame_%d.' + Video.check_frame_extension(file_extension)])
+    #     command = ['ffmpeg', "-analyzeduration", "2147483647", 
+    #                 "-probesize", "2147483647", 
+    #                 "-y", "-i", video_path,
+    #                 "-strict", "-2", "-q:v", "1", os.path.join('outputs', face_swapper.id + '.mp4')]
+        
+
