@@ -42,6 +42,10 @@ class W2l:
         self.face_swap_img = face_swap_img
         self.nosmooth = nosmooth
         self.box = [-1, -1, -1, -1]
+        self.box = [56, 174, 470, 563]
+
+
+        
         self.wav2lip_batch_size = 128
         self.fps = 25
         self.resize_factor = resize_factor
@@ -300,9 +304,15 @@ class W2l:
                 y1, y2, x1, x2 = c
                 p = cv2.resize(p.astype(np.uint8), (x2 - x1, y2 - y1))
 
+                p = self.face_enhancer.run(p, blend_percentage=50)
+                # out.write(enhanced_frame)
+
                 f[y1:y2, x1:x2] = p
 
                 out.write(f)
+
+                # cv2.imwrite('test.png', p)
+                # cv2.imwrite('test.png', f)
 
                 jobs_database[self.id]['progress'] = np.round((j+i*self.wav2lip_batch_size)/len(full_frames), 2)
 
@@ -311,8 +321,8 @@ class W2l:
                 # out.write(enhanced_frame)
 
 
-                # cv2.namedWindow('enhanced_frame', 0)
-                # cv2.imshow('enhanced_frame', enhanced_frame)
+                # cv2.namedWindow('f', 0)
+                # cv2.imshow('f', f)
                 # cv2.waitKey(1)
 
         out.release()

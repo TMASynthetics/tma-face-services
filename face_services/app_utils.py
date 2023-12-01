@@ -71,11 +71,6 @@ def perform_face_swapping(face_swapper, source_path, target_path,
     target_media = Video(path=target_path)
     face_swapper.set_source_face(cv2.imread(source_path))
 
-    if target_media.is_video:
-        out = cv2.VideoWriter(os.path.join(folder_path, 'output', 'result.avi'),
-                                cv2.VideoWriter_fourcc(*'DIVX'), target_media.fps, 
-                                (target_media.width, target_media.height))
-        
     for frame_idx in range(target_media.frame_number):
 
         img_target=target_media.get_frame_position_by_index(frame_idx)
@@ -88,22 +83,17 @@ def perform_face_swapping(face_swapper, source_path, target_path,
                                         enhance=enhance,
                                         enhancer_blend_percentage=enhancer_blend_percentage)
         
-        if target_media.is_video:
-            out.write(swapped_face)
-        else:
-            output_path = os.path.join('outputs', face_swapper.id + '.png') 
-            cv2.imwrite(output_path, swapped_face)
+        cv2.imwrite(os.path.join(folder_path, 'output', 'frame_{:0>6}.png'.format(frame_idx)), swapped_face)
 
         jobs_database[face_swapper.id]['progress'] = np.round(frame_idx/target_media.frame_number, 2)
 
     if target_media.is_video:
-        out.release()
-        command = ['ffmpeg', "-analyzeduration", "2147483647", 
-                    "-probesize", "2147483647", 
-                    "-y", "-i", os.path.join(folder_path, 'output', 'result.avi'),
-                    "-strict", "-2", "-q:v", "1", os.path.join('outputs', face_swapper.id + '.mp4')]
-        execute_command(command)
-        output_path = os.path.join('outputs', face_swapper.id + '.mp4') 
+        output_path = target_media.create_video_from_images(os.path.join(folder_path, 'output'), 
+                                                            os.path.join('outputs', face_swapper.id + '.mp4'), 
+                                                            target_media.fps, target_media.path)
+    else:
+        output_path = os.path.join('outputs', face_swapper.id + '.png')
+        cv2.imwrite(output_path, swapped_face)
 
     jobs_database[face_swapper.id]['progress'] = 1
     jobs_database[face_swapper.id]['path'] = output_path

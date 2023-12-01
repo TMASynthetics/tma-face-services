@@ -71,26 +71,32 @@ class Video:
     
     @staticmethod  
     def extract_and_save_all_frames(video_path, output_folder, file_extension: str='png'):
-        # Create the output folder if it doesn't exist
         os.makedirs(output_folder, exist_ok=True)
-        # Run FFmpeg command to extract frames
-        subprocess.call(['ffmpeg', '-i', video_path, '-q:v', '1', f'{output_folder}/frame_%d.' + Video.check_frame_extension(file_extension)])
+        output_frames_path = os.path.join(output_folder, video_path.split('/')[-1].split('.')[0] + '_%06d.'+ Video.check_frame_extension(file_extension))
+        subprocess.call(['ffmpeg', '-i', video_path, '-q:v', '1', output_frames_path])
 
     @staticmethod    
     def check_frame_extension(file_extension) -> int:
         return file_extension if file_extension in ['png', 'jpg', 'bmp'] else 'png'
 
+    @staticmethod    
+    def extract_audio_from_video(video_path, extracted_audio_folder):
+        output_audio_file = os.path.join(extracted_audio_folder, video_path.split('/')[-1].split('.')[0] + '.wav')
+        subprocess.call(['ffmpeg', "-i", video_path, "-vn", "-acodec", "pcm_s16le", "-ac", "2", output_audio_file])
+        return output_audio_file
 
-# ffmpeg -framerate 30 -pattern_type glob -i '*.png' \
-#   -c:v libx264 -pix_fmt yuv420p out.mp4
-
-
-    # @staticmethod  
-    # def merge_video_and_audio(video_path, audio_path, output_file_path):
-    #     subprocess.call(['ffmpeg', '-i', video_path, '-q:v', '1', f'{output_folder}/frame_%d.' + Video.check_frame_extension(file_extension)])
-    #     command = ['ffmpeg', "-analyzeduration", "2147483647", 
-    #                 "-probesize", "2147483647", 
-    #                 "-y", "-i", video_path,
-    #                 "-strict", "-2", "-q:v", "1", os.path.join('outputs', face_swapper.id + '.mp4')]
-        
-
+    @staticmethod   
+    def add_audio_to_video(video_path, audio_path, output_video_path):
+        subprocess.call(['ffmpeg', "-y", "-i", video_path, "-i",audio_path, "-c:v", "copy", "-strict",
+                   "experimental", output_video_path])
+        return output_video_path
+      
+    @staticmethod  
+    def create_video_from_images(input_frames_path, output_video_path, fps, audio_path=None):
+        subprocess.call(['ffmpeg', "-y", "-framerate", str(fps), "-start_number", "0", 
+                         "-pattern_type", "glob", "-i", os.path.join(input_frames_path, '*.png'),
+                         "-i", audio_path, "-map", "0:0", "-map", "1:a", 
+                         "-c:v", "libx264", "-pix_fmt", "yuv420p", "-b:v", "8000k", 
+                          output_video_path])
+        return output_video_path
+    
