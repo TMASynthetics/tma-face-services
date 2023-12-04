@@ -155,13 +155,17 @@ cython_debug/
 
 gfpgan/
 .assets/
-tests/
+# tests/
 .venv/
 outputs/
 face_services/processors/wav2lip/output
 face_services/processors/wav2lip/temp
 face_services/processors/wav2lip/predicator
 face_services/processors/wav2lip/results
+.face_services/
+.vscode
+compose.yaml
+Dockerfile
 
 docker_cmd
 .DS_Store
