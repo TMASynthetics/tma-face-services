@@ -42,7 +42,7 @@ class W2l:
         self.face_swap_img = face_swap_img
         self.nosmooth = nosmooth
         self.box = [-1, -1, -1, -1]
-        self.box = [56, 174, 470, 563]
+        # self.box = [56, 174, 470, 563]
 
 
         
@@ -304,7 +304,7 @@ class W2l:
                 y1, y2, x1, x2 = c
                 p = cv2.resize(p.astype(np.uint8), (x2 - x1, y2 - y1))
 
-                p = self.face_enhancer.run(p, blend_percentage=50)
+                # p = self.face_enhancer.run(p, blend_percentage=50)
                 # out.write(enhanced_frame)
 
                 f[y1:y2, x1:x2] = p

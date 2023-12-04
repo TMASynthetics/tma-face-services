@@ -7,7 +7,7 @@ import json
 from face_services.components.video import Video
 from face_services.jobs_database import jobs_database
 
-AUDIO_SIZE_LIMIT_MB = 10
+AUDIO_SIZE_LIMIT_MB = 100
 IMAGE_SIZE_LIMIT_MB = 10
 VIDEO_SIZE_LIMIT_MB = 1024
 
