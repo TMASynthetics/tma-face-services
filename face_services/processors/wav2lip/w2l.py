@@ -194,7 +194,7 @@ class W2l:
         if self.device == 'cuda':
             checkpoint = torch.load(checkpoint_path)
         else:
-            checkpoint = torch.load(checkpoint_path, map_location='mps')
+            checkpoint = torch.load(checkpoint_path, map_location='cpu')
         # shared.cmd_opts.disable_safe_unpickle = False
         return checkpoint
 

@@ -75,25 +75,26 @@ async def detect(input_file: UploadFile):
     file_content = await input_file.read()
 
     frame = decode_frame(file_content)
-    detected_faces = app.face_detector.run(frame)
+    face_detector = FaceDetector()
+    detected_faces = face_detector.run(frame)
 
     for detected_face in detected_faces:
         cv2.rectangle(frame,(int(detected_face.bbox[0]), int(detected_face.bbox[1])), (int(detected_face.bbox[2]), int(detected_face.bbox[3])), (0, 255, 0), 2)
-        for keypoint in detected_face.kps:
+        for keypoint in detected_face.keypoints:
             cv2.circle(frame, (int(keypoint[0]), int(keypoint[1])), 3, (255, 0, 0), -1)
-        for keypoint in detected_face.landmark_2d_106:
-            cv2.circle(frame, (int(keypoint[0]), int(keypoint[1])), 3, (0, 0, 255), -1)
-        for keypoint in detected_face.landmark_3d_68:
-            cv2.circle(frame, (int(keypoint[0]), int(keypoint[1])), 3, (0, 255, 255), -1)
+        # for keypoint in detected_face.landmark_2d_106:
+        #     cv2.circle(frame, (int(keypoint[0]), int(keypoint[1])), 3, (0, 0, 255), -1)
+        # for keypoint in detected_face.landmark_3d_68:
+        #     cv2.circle(frame, (int(keypoint[0]), int(keypoint[1])), 3, (0, 255, 255), -1)
 
         bbox_width = int(detected_face.bbox[2]) - int(detected_face.bbox[0])
         bbox_height = int(detected_face.bbox[3]) - int(detected_face.bbox[1])
 
         text1 = 'Face ' + str(detected_face.id)
-        text2 = 'Sex:' + str(detected_face.sex) + ' Age:' + str(detected_face.age)
+        # text2 = 'Sex:' + str(detected_face.sex) + ' Age:' + str(detected_face.age)
 
-        font_scale, font_height = get_optimal_font_scale(text2, bbox_width)
-        cv2.putText(frame, text2, (int(detected_face.bbox[0]), int(detected_face.bbox[1]-bbox_height*0.01)), 0, font_scale, (255, 255, 255), 1)
+        font_scale, font_height = get_optimal_font_scale(text1, bbox_width/2)
+        # cv2.putText(frame, text2, (int(detected_face.bbox[0]), int(detected_face.bbox[1]-bbox_height*0.01)), 0, font_scale, (255, 255, 255), 1)
         cv2.putText(frame, text1, (int(detected_face.bbox[0]), int(detected_face.bbox[1]-bbox_height*0.01-font_height)), 0, font_scale, (255, 255, 255), 1)
 
     return Response(content=encode_frame_to_bytes(frame), media_type="image/png")
@@ -124,7 +125,8 @@ async def anonymize(input_file: UploadFile,
     # Get the file
     file_content = await input_file.read()
 
-    anonymised_face = app.face_anonymiser.run(decode_frame(file_content), face_ids=face_ids, method=method, blur_factor=blur_factor, pixel_blocks=pixel_blocks)
+    face_anonymiser = FaceAnonymizer()
+    anonymised_face = face_anonymiser.run(decode_frame(file_content), face_ids=face_ids, method=method, blur_factor=blur_factor, pixel_blocks=pixel_blocks)
     return Response(content=encode_frame_to_bytes(anonymised_face), media_type="image/png")
 
 @app.post("/testing/swap", tags=["Testing"])
@@ -169,8 +171,9 @@ async def swap(source_image_file: UploadFile, target_image_file: UploadFile,
     # Get the file
     source_content = await source_image_file.read()
 
-    swapped_face = app.face_swapper.run(decode_frame(source_content), 
-                                    decode_frame(target_content), 
+    face_swapper = FaceSwapper()
+    swapped_face = face_swapper.run(img_source=decode_frame(source_content), 
+                                    img_target=decode_frame(target_content), 
                                     target_face_ids=target_face_ids, 
                                     source_face_id=source_face_id,
                                     swapper_model=face_swapper_model,
@@ -203,7 +206,9 @@ async def enhance(input_file: UploadFile,
 
     # Get the file
     file_content = await input_file.read()
-    enhanced_face = app.face_enhancer.run(decode_frame(file_content), model=face_enhancer_model, blend_percentage=blend_percentage, )
+
+    face_enhancer = FaceEnhancer()
+    enhanced_face = face_enhancer.run(decode_frame(file_content), model=face_enhancer_model, blend_percentage=blend_percentage, )
     return Response(content=encode_frame_to_bytes(enhanced_face), media_type="image/png")
 #################################################################
 

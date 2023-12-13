@@ -62,7 +62,7 @@ class FaceSwapper:
 		swapped_frame = img_target.copy()
 
 		faces_target = self.face_detector.run(img_target)
-		if img_source:
+		if img_source is not None:
 			self.faces_source = self.face_detector.run(img_source)
 
 		self.check_current_model(swapper_model)
