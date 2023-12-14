@@ -189,3 +189,6 @@ face_services/processors/wav2lip/models/__init__.py
 .DS_Store
 .DS_Store
 database.json
+
+
+face_services/models/face_analyzer/shape_predictor_68_face_landmarks.dat
