@@ -6,7 +6,7 @@ Face Services API
 > - [x] Face swapping
 > - [x] Face enhancement
 > - [ ] Face reenactment
-> - [ ] Visual dubbing
+> - [x] Visual dubbing
 
 > [!NOTE]
 > This version works only with image file.
@@ -19,8 +19,8 @@ Please use Python 3.10.
 ```
 pip install -r requirements.txt
 ```
-2. Download the pretrained models from [here](https://jwsite.sharepoint.com/:u:/r/sites/WHQ-MEPS-TMASyntheticMedia-Team/Shared%20Documents/Products/Face%20Services%20API/models.zip?csf=1&web=1&e=cPBQEs).
-Unzip and place the _**.assets**_ folder in the _**face_services**_ folder
+2. Download the pretrained models from [here](https://jwsite.sharepoint.com/:u:/r/sites/WHQ-MEPS-TMASyntheticMedia-Team/Shared%20Documents/Products/Face%20Services%20API/models.zip?csf=1&web=1&e=7JRyLG).
+Unzip and place the _**models**_ folder in the _**face_services**_ folder
 
 Usage
 -----

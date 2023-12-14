@@ -1,8 +1,9 @@
 from typing import Any, Dict, Optional, List, Tuple
-import numpy
-from face_services.processors.models import FACE_ENHANCER_MODELS
-from ..processors.face_detector import FaceDetector
-import logging
+import uuid
+import numpy as np
+from face_services.models_list import FACE_ENHANCER_MODELS
+from .face_detector import FaceDetector
+from face_services.logger import logger
 import onnxruntime
 import cv2
 
@@ -10,37 +11,37 @@ import cv2
 class FaceEnhancer:
   
 	def __init__(self, model=None):
-		logging.info('FaceEnhancer - Initialize')
+		self.id = uuid.uuid4()
+		logger.info('FaceEnhancer {} - Initialize'.format(self.id))
 		self.model = None
 		self.current_model_name = self.get_available_models()[0]
 		self.check_current_model(model)
-		self.face_analyzer = FaceDetector()
+		self.face_detector = FaceDetector()
 
 	@staticmethod
 	def get_available_models():
 		return list(FACE_ENHANCER_MODELS.keys())
 
 	def check_current_model(self, model):
-		logging.info('FaceEnhancer - Current model is : {}'.format(self.current_model_name))
-		if model != self.current_model_name and self.model is not None:
+		if model != self.current_model_name and self.model is not None and model is not None:
 			if model is not None and model in self.get_available_models():
 				self.current_model_name = model
-				logging.info('FaceEnhancer - Initialize with model : {}'.format(self.current_model_name))
+				logger.info('FaceEnhancer {} - Initialize with model : {}'.format(self.id, self.current_model_name))
 				self.model = onnxruntime.InferenceSession(FACE_ENHANCER_MODELS[self.current_model_name]['path'], providers = ['CPUExecutionProvider'])
 			else:
-				logging.info('FaceEnhancer - Model : {} not in {}'.format(model, self.get_available_models()))
+				logger.info('FaceEnhancer {} - Model : {} not in {}'.format(self.id, model, self.get_available_models()))
 		elif self.model is None:
-			logging.info('FaceEnhancer - Initialize with model : {}'.format(self.current_model_name))
+			logger.info('FaceEnhancer {} - Initialize with model : {}'.format(self.id, self.current_model_name))
 			self.model = onnxruntime.InferenceSession(FACE_ENHANCER_MODELS[self.current_model_name]['path'], providers = ['CPUExecutionProvider'])
-		else:
-			logging.info('FaceEnhancer - Current model is already : {}'.format(model))	
-		
+
+
 	def run(self, frame, model: str=None, blend_percentage: int=100):
-		logging.info('FaceEnhancer - Run with blend_percentage : {}%'.format(blend_percentage))
-		
-		enhanced_frame = frame.copy()
-		analysed_faces = self.face_analyzer.run(frame)
+		logger.info('FaceEnhancer {} - Run with blend_percentage : {}%'.format(self.id, blend_percentage))
+
 		self.check_current_model(model)
+
+		enhanced_frame = frame.copy()
+		analysed_faces = self.face_detector.run(frame)
 
 		for face in analysed_faces:
 			crop_frame, affine_matrix = self.warp_face(face, enhanced_frame)
@@ -50,7 +51,7 @@ class FaceEnhancer:
 				if frame_processor_input.name == 'input':
 					frame_processor_inputs[frame_processor_input.name] = crop_frame
 				if frame_processor_input.name == 'weight':
-					frame_processor_inputs[frame_processor_input.name] = numpy.array([ 1 ], dtype = numpy.double)
+					frame_processor_inputs[frame_processor_input.name] = np.array([ 1 ], dtype = np.double)
 			crop_frame = self.model.run(None, frame_processor_inputs)[0][0]
 			crop_frame = self.normalize_crop_frame(crop_frame)
 			paste_frame = self.paste_back(enhanced_frame, crop_frame, affine_matrix)
@@ -61,7 +62,7 @@ class FaceEnhancer:
 
 
 	def warp_face(self, target_face, temp_frame):
-		template = numpy.array(
+		template = np.array(
 		[
 			[ 192.98138, 239.94708 ],
 			[ 318.90277, 240.1936 ],
@@ -69,7 +70,7 @@ class FaceEnhancer:
 			[ 201.26117, 371.41043 ],
 			[ 313.08905, 371.15118 ]
 		])
-		affine_matrix = cv2.estimateAffinePartial2D(target_face['kps'], template, method = cv2.LMEDS)[0]
+		affine_matrix = cv2.estimateAffinePartial2D(np.array(target_face.keypoints), template, method = cv2.LMEDS)[0]
 		crop_frame = cv2.warpAffine(temp_frame, affine_matrix, (512, 512))
 		return crop_frame, affine_matrix
 
@@ -77,16 +78,16 @@ class FaceEnhancer:
 	def prepare_crop_frame(self, crop_frame):
 		crop_frame = crop_frame[:, :, ::-1] / 255.0
 		crop_frame = (crop_frame - 0.5) / 0.5
-		crop_frame = numpy.expand_dims(crop_frame.transpose(2, 0, 1), axis = 0).astype(numpy.float32)
+		crop_frame = np.expand_dims(crop_frame.transpose(2, 0, 1), axis = 0).astype(np.float32)
 		return crop_frame
 
 
 	def normalize_crop_frame(self, crop_frame):
-		crop_frame = numpy.clip(crop_frame, -1, 1)
+		crop_frame = np.clip(crop_frame, -1, 1)
 		crop_frame = (crop_frame + 1) / 2
 		crop_frame = crop_frame.transpose(1, 2, 0)
 		crop_frame = (crop_frame * 255.0).round()
-		crop_frame = crop_frame.astype(numpy.uint8)[:, :, ::-1]
+		crop_frame = crop_frame.astype(np.uint8)[:, :, ::-1]
 		return crop_frame
 
 
@@ -95,18 +96,18 @@ class FaceEnhancer:
 		temp_frame_height, temp_frame_width = temp_frame.shape[0:2]
 		crop_frame_height, crop_frame_width = crop_frame.shape[0:2]
 		inverse_crop_frame = cv2.warpAffine(crop_frame, inverse_affine_matrix, (temp_frame_width, temp_frame_height))
-		inverse_mask = numpy.ones((crop_frame_height, crop_frame_width, 3), dtype = numpy.float32)
+		inverse_mask = np.ones((crop_frame_height, crop_frame_width, 3), dtype = np.float32)
 		inverse_mask_frame = cv2.warpAffine(inverse_mask, inverse_affine_matrix, (temp_frame_width, temp_frame_height))
-		inverse_mask_frame = cv2.erode(inverse_mask_frame, numpy.ones((2, 2)))
+		inverse_mask_frame = cv2.erode(inverse_mask_frame, np.ones((2, 2)))
 		inverse_mask_border = inverse_mask_frame * inverse_crop_frame
-		inverse_mask_area = numpy.sum(inverse_mask_frame) // 3
+		inverse_mask_area = np.sum(inverse_mask_frame) // 3
 		inverse_mask_edge = int(inverse_mask_area ** 0.5) // 20
 		inverse_mask_radius = inverse_mask_edge * 2
-		inverse_mask_center = cv2.erode(inverse_mask_frame, numpy.ones((inverse_mask_radius, inverse_mask_radius)))
+		inverse_mask_center = cv2.erode(inverse_mask_frame, np.ones((inverse_mask_radius, inverse_mask_radius)))
 		inverse_mask_blur_size = inverse_mask_edge * 2 + 1
 		inverse_mask_blur_area = cv2.GaussianBlur(inverse_mask_center, (inverse_mask_blur_size, inverse_mask_blur_size), 0)
 		temp_frame = inverse_mask_blur_area * inverse_mask_border + (1 - inverse_mask_blur_area) * temp_frame
-		temp_frame = temp_frame.clip(0, 255).astype(numpy.uint8)
+		temp_frame = temp_frame.clip(0, 255).astype(np.uint8)
 		return temp_frame
 
 
