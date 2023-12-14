@@ -2,7 +2,7 @@ from collections import OrderedDict
 from face_services.logger import logger
 from typing import Any, Dict, Optional, List
 import uuid
-from face_services.models.models_list import FACE_ANALYZER_MODELS
+from face_services.models_list import FACE_ANALYZER_MODELS
 from face_services.typing import Frame
 
 

@@ -1,7 +1,7 @@
 from typing import Any, Dict, Optional, List, Tuple
 import uuid
 import numpy as np
-from face_services.models.models_list import FACE_ENHANCER_MODELS
+from face_services.models_list import FACE_ENHANCER_MODELS
 from .face_detector import FaceDetector
 from face_services.logger import logger
 import onnxruntime

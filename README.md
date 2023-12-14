@@ -6,7 +6,7 @@ Face Services API
 > - [x] Face swapping
 > - [x] Face enhancement
 > - [ ] Face reenactment
-> - [ ] Visual dubbing
+> - [x] Visual dubbing
 
 > [!NOTE]
 > This version works only with image file.

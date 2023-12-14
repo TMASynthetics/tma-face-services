@@ -3,7 +3,7 @@ from face_services.logger import logger
 from typing import Any, Optional, List, Tuple
 import uuid
 from face_services.components.face import Face
-from face_services.models.models_list import FACE_ANALYZER_MODELS
+from face_services.models_list import FACE_ANALYZER_MODELS
 import numpy as np
 import cv2
 from face_services.processors.face_helper import resize_frame_dimension, warp_face

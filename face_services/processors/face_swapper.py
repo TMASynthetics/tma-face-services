@@ -11,7 +11,7 @@ import onnxruntime
 
 from face_services.components.face import Face
 
-from face_services.models.models_list import FACE_SWAPPER_MODELS
+from face_services.models_list import FACE_SWAPPER_MODELS
 from face_services.processors.face_helper import paste_back, warp_face
 from face_services.typing import Embedding, Frame
 
