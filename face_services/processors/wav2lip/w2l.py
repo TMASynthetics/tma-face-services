@@ -314,7 +314,8 @@ class W2l:
                 # cv2.imwrite('test.png', p)
                 # cv2.imwrite('test.png', f)
 
-                jobs_database[self.id]['progress'] = np.round((j+i*self.wav2lip_batch_size)/len(full_frames), 2)
+                if self.id in jobs_database.keys():
+                    jobs_database[self.id]['progress'] = np.round((j+i*self.wav2lip_batch_size)/len(full_frames), 2)
 
                 # enhanced_frame = self.face_enhancer.run(f, model='codeformer', 
                 #                                         blend_percentage=50)

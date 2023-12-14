@@ -52,8 +52,9 @@ class FaceVisualDubber:
 
 		output_path = self.clean_and_close()
 		
-		jobs_database[self.id]['progress'] = 1
-		jobs_database[self.id]['path'] = output_path
+		if self.id in jobs_database.keys():
+			jobs_database[self.id]['progress'] = 1
+			jobs_database[self.id]['path'] = output_path
 
 		return output_path
 
