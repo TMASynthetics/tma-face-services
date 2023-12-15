@@ -14,9 +14,9 @@ from pkg_resources import resource_filename
 from face_services.processors.face_enhancer import FaceEnhancer
 
 class Wav2LipUHQ:
-    def __init__(self, face, face_restore_model, mouth_mask_dilatation, 
+    def __init__(self, face, w2l_video, face_restore_model, mouth_mask_dilatation, 
                  erode_face_mask, mask_blur, only_mouth,
-                 face_swap_img, resize_factor, code_former_weight, output_folder, debug=False):
+                 face_swap_img, resize_factor, code_former_weight, output_folder, audio_path, debug=False):
         
         self.output_folder = output_folder
         self.wav2lip_folder = os.path.sep.join(os.path.abspath(__file__).split(os.path.sep)[:-1])
@@ -27,14 +27,24 @@ class Wav2LipUHQ:
         self.mask_blur = mask_blur
         self.only_mouth = only_mouth
         self.face_swap_img = face_swap_img
-        self.w2l_video = self.output_folder + '/output/result_voice.mp4'
-        self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
+        self.w2l_video = w2l_video
+
+        if torch.cuda.is_available():
+            self.device = 'cuda'
+        elif torch.backends.mps.is_available():
+            self.device = 'mps'
+        else:
+            self.device = 'cpu'
+
+
         self.ffmpeg_binary = self.find_ffmpeg_binary()
         self.resize_factor = resize_factor
         self.code_former_weight = code_former_weight
         self.debug = debug
 
-        self.face_enhancer = FaceEnhancer()
+        self.audio_path = audio_path
+
+        self.face_enhancer = FaceEnhancer(model='codeformer')
 
     def find_ffmpeg_binary(self):
         for package in ['imageio_ffmpeg', 'imageio-ffmpeg']:
@@ -66,7 +76,7 @@ class Wav2LipUHQ:
     def create_video_from_images(self, nb_frames):
         fps = str(self.get_framerate(self.w2l_video))
         command = [self.ffmpeg_binary, "-y", "-framerate", fps, "-start_number", "0", "-i",
-                   self.output_folder + "/output/final/output_%05d.png", "-vframes",
+                   self.output_folder + "/output/output_%05d.png", "-vframes",
                    str(nb_frames), "-c:v", "libx264", "-pix_fmt", "yuv420p", "-b:v", "8000k",
                    self.output_folder + "/output/video.mp4"]
 
@@ -121,11 +131,11 @@ class Wav2LipUHQ:
         return dilated_points
 
     def execute(self, resume=False):
-        output_dir = self.output_folder + '/output/'
-        debug_path = self.output_folder + "debug/"
 
-        face_enhanced_path = output_dir + "face_enhanced/"
-        final_path = output_dir + 'final/'
+        debug_path = self.output_folder + "/debug/"
+        face_enhanced_path = self.output_folder + "/faces_enhanced/"
+        processed_path = self.output_folder + '/frames_processed/'
+        final_path = self.output_folder + '/output/'
         
         detector, predictor = self.initialize_dlib_predictor()
         vs, vi = self.initialize_video_streams()
@@ -136,19 +146,6 @@ class Wav2LipUHQ:
         max_frame = str(int(vs.get(cv2.CAP_PROP_FRAME_COUNT)))
         frame_number = 0
 
-        if resume:
-            if os.path.exists(self.wav2lip_folder + "/resume.json"):
-                with open(self.wav2lip_folder + "/resume.json", "r") as f:
-                    parameters = json.load(f)
-                # Read frame
-                for f in range(parameters["frame"]):
-                    _, _ = vs.read()
-                    ret, _ = vi.read()
-                    if not ret:
-                        vi.release()
-                        vi = cv2.VideoCapture(self.original_video)
-                        _, _ = vi.read()
-                frame_number = parameters["frame"]
         print("Face Restoration model: " + str(self.face_restore_model))
 
         while True:
@@ -178,10 +175,17 @@ class Wav2LipUHQ:
             original_gray = cv2.cvtColor(original_frame, cv2.COLOR_RGB2GRAY)
 
             # Restore face
-            w2l_frame_to_restore = cv2.cvtColor(w2l_frame, cv2.COLOR_BGR2RGB)
-            image_restored = self.face_enhancer.run(w2l_frame_to_restore, blend_percentage=self.code_former_weight)
+            # w2l_frame_to_restore = cv2.cvtColor(w2l_frame, cv2.COLOR_BGR2RGB)
 
-            image_restored2 = cv2.cvtColor(image_restored, cv2.COLOR_RGB2BGR)
+            image_restored2 = self.face_enhancer.run(w2l_frame, blend_percentage=self.code_former_weight)
+
+            # cv2.namedWindow('image_restored', 0)
+            # cv2.imshow('image_restored', image_restored)
+            # cv2.waitKey(1)
+
+            # image_restored2 = cv2.cvtColor(image_restored, cv2.COLOR_RGB2BGR)
+
+
             cv2.imwrite(face_enhanced_path + "face_restore_" + f_number + ".png", image_restored2)
             image_restored_gray = cv2.cvtColor(image_restored2, cv2.COLOR_RGB2GRAY)
 
@@ -245,7 +249,7 @@ class Wav2LipUHQ:
                 original = original.astype(np.uint8)
 
                 # Save final image
-                cv2.imwrite(final_path + "output_" + f_number + ".png", original)
+                cv2.imwrite(processed_path + "output_" + f_number + ".png", original)
 
                 if self.debug:
                     clone = w2l_frame.copy()
@@ -272,29 +276,32 @@ class Wav2LipUHQ:
             vs.release()
             vi.release()
 
-            print("[INFO] Create Videos output!")
-            self.create_video_from_images(frame_number - 1)
-            print("[INFO] Extract Audio from input!")
-            self.extract_audio_from_video()
-            print("[INFO] Add Audio to Videos!")
-            self.add_audio_to_video()
-            print("[INFO] Done! file save in output/video_output.mp4")
+            return os.path.join(self.output_folder, "output")
 
-            if str(frame_number) != max_frame:
-                parameters = {"frame": frame_number}
-                with open(self.wav2lip_folder + "/resume.json", 'w') as f:
-                    json.dump(parameters, f)
-            else:
-                if os.path.exists(self.wav2lip_folder + "/resume.json"):
-                    os.remove(self.wav2lip_folder + "/resume.json")
-            if self.face_swap_img is None:
-                face_swap_output = None
-            else:
-                face_swap_output = self.wav2lip_folder + "/output/faceswap/video.mp4"
-            return [face_swap_output,
-                    self.wav2lip_folder + "/results/result_voice.mp4",
-                    self.wav2lip_folder + "/output/output_video_enhanced.mp4",
-                    self.wav2lip_folder + "/output/output_video.mp4"]
+
+            # print("[INFO] Create Videos output!")
+            # self.create_video_from_images(frame_number - 1)
+            # print("[INFO] Extract Audio from input!")
+            # self.extract_audio_from_video()
+            # print("[INFO] Add Audio to Videos!")
+            # self.add_audio_to_video()
+            # print("[INFO] Done! file save in output/video_output.mp4")
+
+            # if str(frame_number) != max_frame:
+            #     parameters = {"frame": frame_number}
+            #     with open(self.wav2lip_folder + "/resume.json", 'w') as f:
+            #         json.dump(parameters, f)
+            # else:
+            #     if os.path.exists(self.wav2lip_folder + "/resume.json"):
+            #         os.remove(self.wav2lip_folder + "/resume.json")
+            # if self.face_swap_img is None:
+            #     face_swap_output = None
+            # else:
+            #     face_swap_output = self.wav2lip_folder + "/output/faceswap/video.mp4"
+            # return [face_swap_output,
+            #         self.wav2lip_folder + "/results/result_voice.mp4",
+            #         self.wav2lip_folder + "/output/output_video_enhanced.mp4",
+            #         self.wav2lip_folder + "/output/output_video.mp4"]
         else:
             print("[INFO] Interrupted!")
             return None

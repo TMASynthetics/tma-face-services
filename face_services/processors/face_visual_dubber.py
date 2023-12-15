@@ -32,7 +32,7 @@ class FaceVisualDubber:
 		if not os.path.exists(self.folder_path):
 			os.makedirs(self.folder_path)
 
-		for folder in ['frames', 'faces', 'audio', 'output', 'debug']:
+		for folder in ['frames', 'faces', 'audio', 'output', 'debug', 'faces_enhanced', 'frames_processed']:
 			if not os.path.exists(os.path.join(self.folder_path, folder)):
 				os.makedirs(os.path.join(self.folder_path, folder))
 	
@@ -48,10 +48,18 @@ class FaceVisualDubber:
 			model, True, 1, 0, 20, 0, 0, None, 
 			self.folder_path, self.id)
 		
-		w2l.execute()
+		w2l_output = w2l.execute()
+
+		w2luhq = Wav2LipUHQ(self.source_video.path, w2l_output, "GFPGAN", 30, 15, 15, True, None, 
+					  1, 75, self.folder_path, False, self.target_audio.path)
+		w2luhq.execute()
+
+		Video.create_video_from_images(os.path.join(self.folder_path, 'frames_processed'), 
+								 os.path.join(self.folder_path, 'output', 'result_enhanced.mp4'),
+								 self.source_video.fps, self.target_audio.path)
 
 		output_path = self.clean_and_close()
-		
+
 		if self.id in jobs_database.keys():
 			jobs_database[self.id]['progress'] = 1
 			jobs_database[self.id]['path'] = output_path
@@ -64,9 +72,11 @@ class FaceVisualDubber:
 			os.makedirs('outputs')
 		shutil.move(os.path.join(self.folder_path, "output", "result_voice.mp4"), 
 			  		os.path.join('outputs', self.id + '.mp4'))
+		shutil.move(os.path.join(self.folder_path, "output", "result_enhanced.mp4"), 
+			  		os.path.join('outputs', self.id + '_enhanced.mp4'))
 		if os.path.exists(self.folder_path):
 			shutil.rmtree(self.folder_path)
-		return os.path.join('outputs', self.id + '.mp4')
+		return os.path.join('outputs', self.id + '_enhanced.mp4')
 
 	@staticmethod
 	def get_available_models():

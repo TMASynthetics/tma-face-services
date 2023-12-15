@@ -93,10 +93,18 @@ class Video:
       
     @staticmethod  
     def create_video_from_images(input_frames_path, output_video_path, fps, audio_path=None):
-        subprocess.call(['ffmpeg', "-y", "-framerate", str(fps), "-start_number", "0", 
-                         "-pattern_type", "glob", "-i", os.path.join(input_frames_path, '*.png'),
-                         "-i", audio_path, "-map", "0:0", "-map", "1:a", 
-                         "-c:v", "libx264", "-pix_fmt", "yuv420p", "-b:v", "8000k", 
-                          output_video_path])
+
+        if audio_path:
+            subprocess.call(['ffmpeg', "-y", "-framerate", str(fps), "-start_number", "0", 
+                            "-pattern_type", "glob", "-i", os.path.join(input_frames_path, '*.png'),
+                            "-i", audio_path, "-map", "0:0", "-map", "1:a", 
+                            "-c:v", "libx264", "-pix_fmt", "yuv420p", "-b:v", "8000k", 
+                            output_video_path])
+        else:
+            subprocess.call(['ffmpeg', "-y", "-framerate", str(fps), "-start_number", "0", 
+                            "-pattern_type", "glob", "-i", os.path.join(input_frames_path, '*.png'), 
+                            "-map", "0:0", "-c:v", "libx264", "-pix_fmt", "yuv420p", "-b:v", "8000k", 
+                            output_video_path])
+                 
         return output_video_path
     

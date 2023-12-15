@@ -338,3 +338,5 @@ class W2l:
                    "-y", "-i", self.audio, "-i", self.output_folder + '/output/result.avi',
                    "-strict", "-2", "-q:v", "1", self.outfile]
         self.execute_command(command)
+
+        return self.outfile

@@ -71,7 +71,7 @@ def perform_face_swapping(face_swapper, source_path, target_path,
     target_media = Video(path=target_path)
     face_swapper.set_source_face(cv2.imread(source_path))
 
-    for frame_idx in range(target_media.frame_number):
+    for frame_idx in range(target_media.frame_number-1):
 
         img_target=target_media.get_frame_position_by_index(frame_idx)
         swapped_face = face_swapper.run(img_source=None, 
