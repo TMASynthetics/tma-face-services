@@ -49,7 +49,7 @@ class FaceDetector:
 				]
 				face = Face(bbox=bbox, confidence=detection[14])
 				face.keypoints = (detection[4:14].reshape((5, 2)) * [[ ratio_width, ratio_height ]]).tolist()
-				face.embedding = self.calc_embedding(temp_frame, face.keypoints)
+				# face.embedding = self.calc_embedding(temp_frame, face.keypoints)
 				faces.append(face)
 				
 		return self.identify_faces(faces)

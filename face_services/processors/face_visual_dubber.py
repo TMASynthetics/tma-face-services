@@ -8,7 +8,6 @@ import uuid
 import os
 from face_services.components.audio import Audio
 from face_services.components.video import Video
-from face_services.processors.face_detector import FaceDetector
 from face_services.processors.wav2lip.w2l import W2l
 from face_services.processors.wav2lip.wav2lip_uhq import Wav2LipUHQ
 from face_services.jobs_database import jobs_database
@@ -22,8 +21,6 @@ class FaceVisualDubber:
 			self.source_video = Video(path=video_source_path)
 		if audio_target_path:
 			self.target_audio = Audio(path=audio_target_path)
-
-		self.face_detector = FaceDetector()
 
 		self.mel_step_size = 16
 		self.face_detected_batch_size = 16
@@ -50,13 +47,13 @@ class FaceVisualDubber:
 		
 		w2l_output = w2l.execute()
 
-		# w2luhq = Wav2LipUHQ(self.source_video.path, w2l_output, "GFPGAN", 30, 15, 15, True, None, 
-		# 			  1, 75, self.folder_path, False, self.target_audio.path)
-		# w2luhq.execute()
+		w2luhq = Wav2LipUHQ(self.source_video.path, w2l_output, "GFPGAN", 30, 15, 15, True, None, 
+					  1, 75, self.folder_path, False, self.target_audio.path)
+		w2luhq.execute()
 
-		# Video.create_video_from_images(os.path.join(self.folder_path, 'frames_processed'), 
-		# 						 os.path.join(self.folder_path, 'output', 'result_enhanced.mp4'),
-		# 						 self.source_video.fps, self.target_audio.path)
+		Video.create_video_from_images(os.path.join(self.folder_path, 'frames_processed'), 
+								 os.path.join(self.folder_path, 'output', 'result_enhanced.mp4'),
+								 self.source_video.fps, self.target_audio.path)
 
 		output_path = self.clean_and_close()
 
