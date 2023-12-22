@@ -17,8 +17,6 @@ class W2l:
                  face_swap_img, output_folder, id):
         self.wav2lip_folder = os.path.sep.join(os.path.abspath(__file__).split(os.path.sep)[:-1])
         self.static = False
-        # if os.path.isfile(face) and face.split('.')[1] in ['jpg', 'png', 'jpeg']:
-        #     self.static = True
 
         self.img_size = 96
         self.face = face
@@ -42,10 +40,7 @@ class W2l:
         self.face_swap_img = face_swap_img
         self.nosmooth = nosmooth
         self.box = [-1, -1, -1, -1]
-        # self.box = [56, 174, 470, 563]
 
-
-        
         self.wav2lip_batch_size = 128
         self.fps = 25
         self.resize_factor = resize_factor
