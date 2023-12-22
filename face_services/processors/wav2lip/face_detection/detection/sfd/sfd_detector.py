@@ -18,6 +18,8 @@ class SFDDetector(FaceDetector):
         super(SFDDetector, self).__init__(device, verbose)
         # shared.cmd_opts.disable_safe_unpickle = True
         # Initialise the face detector
+
+        path_to_detector = os.path.join(os.getcwd(), 'face_services', 'models', 'face_analyzer', 's3fd-619a316812.pth')
         if not os.path.isfile(path_to_detector):
             model_weights = load_url(models_urls['s3fd'])
         else:
