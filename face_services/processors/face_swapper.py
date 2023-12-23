@@ -43,12 +43,12 @@ class FaceSwapper:
 			if model is not None and model in self.get_available_models():
 				self.current_swapper_model_name = model
 				logger.info('FaceSwapper - Initialize with model : {}'.format(self.current_swapper_model_name))
-				self.model = onnxruntime.InferenceSession(FACE_SWAPPER_MODELS[self.current_swapper_model_name]['path'], providers = ['CPUExecutionProvider'])
+				self.model = onnxruntime.InferenceSession(FACE_SWAPPER_MODELS[self.current_swapper_model_name]['path'], providers = ['CUDAExecutionProvider'])
 			else:
 				logger.info('FaceSwapper - Model : {} not in {}'.format(model, self.get_available_models()))	
 		elif self.model is None:
 			logger.info('FaceSwapper - Initialize with model : {}'.format(self.current_swapper_model_name))
-			self.model = onnxruntime.InferenceSession(FACE_SWAPPER_MODELS[self.current_swapper_model_name]['path'], providers = ['CPUExecutionProvider'])
+			self.model = onnxruntime.InferenceSession(FACE_SWAPPER_MODELS[self.current_swapper_model_name]['path'], providers = ['CUDAExecutionProvider'])
 
 	def run(self, img_target: Frame, 
 		 img_source: Frame = None, 

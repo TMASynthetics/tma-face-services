@@ -18,6 +18,8 @@ class FaceEnhancer:
 		self.check_current_model(model)
 		self.face_detector = FaceDetector()
 
+		# ['CPUExecutionProvider', 'CUDAExecutionProvider']
+
 	@staticmethod
 	def get_available_models():
 		return list(FACE_ENHANCER_MODELS.keys())
@@ -27,12 +29,12 @@ class FaceEnhancer:
 			if model is not None and model in self.get_available_models():
 				self.current_model_name = model
 				logger.info('FaceEnhancer {} - Initialize with model : {}'.format(self.id, self.current_model_name))
-				self.model = onnxruntime.InferenceSession(FACE_ENHANCER_MODELS[self.current_model_name]['path'], providers = ['CPUExecutionProvider'])
+				self.model = onnxruntime.InferenceSession(FACE_ENHANCER_MODELS[self.current_model_name]['path'], providers = ['CUDAExecutionProvider'])
 			else:
 				logger.info('FaceEnhancer {} - Model : {} not in {}'.format(self.id, model, self.get_available_models()))
 		elif self.model is None:
 			logger.info('FaceEnhancer {} - Initialize with model : {}'.format(self.id, self.current_model_name))
-			self.model = onnxruntime.InferenceSession(FACE_ENHANCER_MODELS[self.current_model_name]['path'], providers = ['CPUExecutionProvider'])
+			self.model = onnxruntime.InferenceSession(FACE_ENHANCER_MODELS[self.current_model_name]['path'], providers = ['CUDAExecutionProvider'])
 
 
 	def run(self, frame, model: str=None, blend_percentage: int=100):

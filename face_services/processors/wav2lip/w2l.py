@@ -5,8 +5,10 @@ import cv2, os, face_services.processors.wav2lip.audio as audio
 from face_services.processors.face_enhancer import FaceEnhancer
 import subprocess
 from tqdm import tqdm
-import torch, face_services.processors.wav2lip.face_detection as face_detection
-from face_services.processors.wav2lip.models import Wav2Lip
+import torch
+import face_services.processors.wav2lip.face_detection.detection.core as face_detection
+from face_services.processors.wav2lip.models.wav2lip import Wav2Lip
+import face_services.processors.wav2lip.face_detection.api
 from pkg_resources import resource_filename
 from face_services.logger import logger
 from face_services.jobs_database import jobs_database

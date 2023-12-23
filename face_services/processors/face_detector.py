@@ -17,6 +17,7 @@ class FaceDetector:
 		self.id = uuid.uuid4()
 		logger.info('FaceDetector {} - Initialize'.format(self.id))
 		self.model = cv2.FaceDetectorYN.create(FACE_ANALYZER_MODELS['detection']['face_detection_yunet']['path'], None, (0, 0))
+		self.face_recognizer = onnxruntime.InferenceSession(FACE_ANALYZER_MODELS['recognition']['face_recognition_arcface_inswapper']['path'], providers=['CUDAExecutionProvider'])
 
 	def run(self, frame):
 		logger.info('FaceDetector {} - Run'.format(self.id))
@@ -56,14 +57,13 @@ class FaceDetector:
 
 
 	def calc_embedding(self, temp_frame : Frame, kps : Kps) -> Tuple[Embedding, Embedding]:
-		face_recognizer = onnxruntime.InferenceSession(FACE_ANALYZER_MODELS['recognition']['face_recognition_arcface_inswapper']['path'], providers=['CPUExecutionProvider'])
 		crop_frame, matrix = warp_face(temp_frame, kps, 'arcface_v2', (112, 112))
 		crop_frame = crop_frame.astype(np.float32) / 127.5 - 1
 		crop_frame = crop_frame[:, :, ::-1].transpose(2, 0, 1)
 		crop_frame = np.expand_dims(crop_frame, axis = 0)
-		embedding = face_recognizer.run(None,
+		embedding = self.face_recognizer.run(None,
 		{
-			face_recognizer.get_inputs()[0].name: crop_frame
+			self.face_recognizer.get_inputs()[0].name: crop_frame
 		})[0]
 		embedding = embedding.ravel()
 		return embedding
