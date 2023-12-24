@@ -8,7 +8,7 @@ import numpy
 from onnx import numpy_helper
 import onnx
 import onnxruntime
-
+from face_services.processors.utilities import onnx_providers
 from face_services.components.face import Face
 
 from face_services.models_list import FACE_SWAPPER_MODELS
@@ -43,12 +43,12 @@ class FaceSwapper:
 			if model is not None and model in self.get_available_models():
 				self.current_swapper_model_name = model
 				logger.info('FaceSwapper - Initialize with model : {}'.format(self.current_swapper_model_name))
-				self.model = onnxruntime.InferenceSession(FACE_SWAPPER_MODELS[self.current_swapper_model_name]['path'], providers = ['CUDAExecutionProvider'])
+				self.model = onnxruntime.InferenceSession(FACE_SWAPPER_MODELS[self.current_swapper_model_name]['path'], providers = onnx_providers)
 			else:
 				logger.info('FaceSwapper - Model : {} not in {}'.format(model, self.get_available_models()))	
 		elif self.model is None:
 			logger.info('FaceSwapper - Initialize with model : {}'.format(self.current_swapper_model_name))
-			self.model = onnxruntime.InferenceSession(FACE_SWAPPER_MODELS[self.current_swapper_model_name]['path'], providers = ['CUDAExecutionProvider'])
+			self.model = onnxruntime.InferenceSession(FACE_SWAPPER_MODELS[self.current_swapper_model_name]['path'], providers = onnx_providers)
 
 	def run(self, img_target: Frame, 
 		 img_source: Frame = None, 

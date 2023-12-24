@@ -19,3 +19,7 @@ def serialize_faces_analysis(detected_faces):
         detected_face = detected_face.__dict__
     
     return [detected_face.__dict__ for detected_face in detected_faces]
+
+
+onnx_providers = ['CUDAExecutionProvider', 'CoreMLExecutionProvider', 'CPUExecutionProvider']
+# onnx_providers = ['CPUExecutionProvider']
