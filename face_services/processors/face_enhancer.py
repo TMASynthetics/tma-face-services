@@ -13,7 +13,7 @@ class FaceEnhancer:
   
 	def __init__(self, model=None):
 		self.id = uuid.uuid4()
-		logger.info('FaceEnhancer {} - Initialize'.format(self.id))
+		logger.debug('FaceEnhancer {} - Initialize'.format(self.id))
 		self.model = None
 		self.current_model_name = self.get_available_models()[0]
 		self.check_current_model(model)
@@ -27,17 +27,17 @@ class FaceEnhancer:
 		if model != self.current_model_name and self.model is not None and model is not None:
 			if model is not None and model in self.get_available_models():
 				self.current_model_name = model
-				logger.info('FaceEnhancer {} - Initialize with model : {}'.format(self.id, self.current_model_name))
+				logger.debug('FaceEnhancer {} - Initialize with model : {}'.format(self.id, self.current_model_name))
 				self.model = onnxruntime.InferenceSession(FACE_ENHANCER_MODELS[self.current_model_name]['path'], providers = onnx_providers)
 			else:
-				logger.info('FaceEnhancer {} - Model : {} not in {}'.format(self.id, model, self.get_available_models()))
+				logger.debug('FaceEnhancer {} - Model : {} not in {}'.format(self.id, model, self.get_available_models()))
 		elif self.model is None:
-			logger.info('FaceEnhancer {} - Initialize with model : {}'.format(self.id, self.current_model_name))
+			logger.debug('FaceEnhancer {} - Initialize with model : {}'.format(self.id, self.current_model_name))
 			self.model = onnxruntime.InferenceSession(FACE_ENHANCER_MODELS[self.current_model_name]['path'], providers = onnx_providers)
 
 
 	def run(self, frame, model: str=None, blend_percentage: int=100):
-		logger.info('FaceEnhancer {} - Run with blend_percentage : {}%'.format(self.id, blend_percentage))
+		logger.debug('FaceEnhancer {} - Run with blend_percentage : {}%'.format(self.id, blend_percentage))
 
 		self.check_current_model(model)
 

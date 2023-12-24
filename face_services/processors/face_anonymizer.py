@@ -10,11 +10,11 @@ class FaceAnonymizer:
   
 	def __init__(self):
 		self.id = uuid.uuid4()
-		logger.info('FaceAnonymizer {} - Initialize'.format(self.id))
+		logger.debug('FaceAnonymizer {} - Initialize'.format(self.id))
 		self.face_detector = FaceDetector()
 
 	def run(self, frame, face_ids=[], method="blur", blur_factor=3.0, pixel_blocks=9):
-		logger.info('FaceAnonymizer {} - Run'.format(self.id))
+		logger.debug('FaceAnonymizer {} - Run'.format(self.id))
 		anonymised_frame = frame.copy()
 		detected_faces = self.face_detector.run(anonymised_frame)
 
@@ -34,7 +34,7 @@ class FaceAnonymizer:
 		return anonymised_frame
 
 	def anonymize_face_blured(self, cropped_face, blur_factor):
-		logger.info('FaceAnonymizer {} - Blurring face'.format(self.id))
+		logger.debug('FaceAnonymizer {} - Blurring face'.format(self.id))
 		(h, w) = cropped_face.shape[:2]
 		kW = int(w / blur_factor)
 		kH = int(h / blur_factor)
@@ -45,7 +45,7 @@ class FaceAnonymizer:
 		return cv2.GaussianBlur(cropped_face, (kW, kH), 0)
 
 	def anonymize_face_pixelate(self, cropped_face, pixel_blocks):
-		logger.info('FaceAnonymizer - {} Pixelizing face'.format(self.id))
+		logger.debug('FaceAnonymizer - {} Pixelizing face'.format(self.id))
 		(h, w) = cropped_face.shape[:2]
 		xSteps = np.linspace(0, w, pixel_blocks + 1, dtype="int")
 		ySteps = np.linspace(0, h, pixel_blocks + 1, dtype="int")

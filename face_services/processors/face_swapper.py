@@ -22,7 +22,7 @@ class FaceSwapper:
   
 	def __init__(self, swapper_model=None, enhancer_model=None):
 		self.id = str(uuid.uuid4())
-		logger.info('FaceSwapper {} - Initialize'.format(self.id))
+		logger.debug('FaceSwapper {} - Initialize'.format(self.id))
 		self.model = None
 		self.current_swapper_model_name = self.get_available_models()[0]
 		self.check_current_model(swapper_model)
@@ -38,16 +38,16 @@ class FaceSwapper:
 		return list(FACE_SWAPPER_MODELS.keys())
 
 	def check_current_model(self, model):
-		logger.info('FaceSwapper - Current model is : {}'.format(self.current_swapper_model_name))
+		logger.debug('FaceSwapper - Current model is : {}'.format(self.current_swapper_model_name))
 		if model != self.current_swapper_model_name and self.model is not None and model is not None:
 			if model is not None and model in self.get_available_models():
 				self.current_swapper_model_name = model
-				logger.info('FaceSwapper - Initialize with model : {}'.format(self.current_swapper_model_name))
+				logger.debug('FaceSwapper - Initialize with model : {}'.format(self.current_swapper_model_name))
 				self.model = onnxruntime.InferenceSession(FACE_SWAPPER_MODELS[self.current_swapper_model_name]['path'], providers = onnx_providers)
 			else:
-				logger.info('FaceSwapper - Model : {} not in {}'.format(model, self.get_available_models()))	
+				logger.debug('FaceSwapper - Model : {} not in {}'.format(model, self.get_available_models()))	
 		elif self.model is None:
-			logger.info('FaceSwapper - Initialize with model : {}'.format(self.current_swapper_model_name))
+			logger.debug('FaceSwapper - Initialize with model : {}'.format(self.current_swapper_model_name))
 			self.model = onnxruntime.InferenceSession(FACE_SWAPPER_MODELS[self.current_swapper_model_name]['path'], providers = onnx_providers)
 
 	def run(self, img_target: Frame, 
@@ -58,7 +58,7 @@ class FaceSwapper:
 		 target_face_ids=[], 
 		 enhance=False):
 		
-		logger.info('FaceSwapper - Run')
+		logger.debug('FaceSwapper - Run')
 		swapped_frame = img_target.copy()
 
 		faces_target = self.face_detector.run(img_target)
@@ -101,12 +101,12 @@ class FaceSwapper:
 
 			
 			else:
-				logger.info('FaceSwapper - No face with id={} in the source image'.format(source_face_id))
+				logger.debug('FaceSwapper - No face with id={} in the source image'.format(source_face_id))
 		else:
-			logger.info('FaceSwapper - No source face detected')
+			logger.debug('FaceSwapper - No source face detected')
 
 		if enhance:
-			logger.info('FaceSwapper - Enhance swapped face(s)')
+			logger.debug('FaceSwapper - Enhance swapped face(s)')
 			swapped_frame = self.face_enhancer.run(swapped_frame, model=enhancer_model, blend_percentage=enhancer_blend_percentage)
 
 		return swapped_frame

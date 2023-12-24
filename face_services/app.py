@@ -48,7 +48,7 @@ def app_redirect(_):
 
 @app.on_event("startup")
 async def startup_event():
-    logger.info('Start')
+    logger.debug('Start')
 
 #################################################################
 # TESTING

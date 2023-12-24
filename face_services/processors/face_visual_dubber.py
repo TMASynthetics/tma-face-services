@@ -17,7 +17,7 @@ class FaceVisualDubber:
   
 	def __init__(self, video_source_path=None, audio_target_path=None):
 		self.id = str(uuid.uuid1())
-		logger.info('VisualDubber {} - Initialize'.format(self.id))
+		logger.debug('VisualDubber {} - Initialize'.format(self.id))
 		if video_source_path:
 			self.source_video = Video(path=video_source_path)
 		if audio_target_path:
@@ -37,11 +37,11 @@ class FaceVisualDubber:
 				os.makedirs(os.path.join(self.folder_path, folder))
 	
 	def run(self, model=None):
-		logger.info('VisualDubber {} - Run'.format(self.id))
+		logger.debug('VisualDubber {} - Run'.format(self.id))
 
 		if model is None or model not in self.get_available_models():
 			model = self.get_available_models()[0]
-		logger.info('VisualDubber {} - Current model is : {}'.format(self.id, model))
+		logger.debug('VisualDubber {} - Current model is : {}'.format(self.id, model))
 
 		w2l = W2l(self.source_video.path, 
 			self.target_audio.path, 
@@ -67,7 +67,7 @@ class FaceVisualDubber:
 		return output_path
 
 	def clean_and_close(self):
-		logger.info('VisualDubber {} - Clean and close'.format(self.id))
+		logger.debug('VisualDubber {} - Clean and close'.format(self.id))
 		if not os.path.exists('outputs'):
 			os.makedirs('outputs')
 		if os.path.exists(os.path.join(self.folder_path, "output", "result_voice.mp4")):

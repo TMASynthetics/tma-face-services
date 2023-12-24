@@ -2,6 +2,7 @@ import time
 import numpy as np
 import gc
 import cv2, os, face_services.processors.wav2lip.audio as audio
+from face_services.processors.face_detector import FaceDetector
 from face_services.processors.face_enhancer import FaceEnhancer
 import subprocess
 from tqdm import tqdm
@@ -35,7 +36,7 @@ class W2l:
         else:
             self.device = 'cpu'
 
-        logger.info('VisualDubber {} - Using {} for inference'.format(self.id, self.device))
+        logger.debug('VisualDubber {} - Using {} for inference'.format(self.id, self.device))
 
         self.pads = [pad_top, pad_bottom, pad_left, pad_right]
         self.face_swap_img = face_swap_img
@@ -56,6 +57,7 @@ class W2l:
 
         # self.status = 
         self.face_enhancer = FaceEnhancer()
+        self.face_detector = FaceDetector()
 
     def find_ffmpeg_binary(self):
         for package in ['imageio_ffmpeg', 'imageio-ffmpeg']:
@@ -86,8 +88,8 @@ class W2l:
         
         start_time = time.time()
 
-        detector = face_detection.FaceAlignment(face_detection.LandmarksType._2D,
-                                                flip_input=False, device=self.device)
+        # detector = face_detection.FaceAlignment(face_detection.LandmarksType._2D,
+        #                                         flip_input=False, device=self.device)
 
         batch_size = self.face_det_batch_size
 
@@ -95,7 +97,8 @@ class W2l:
             predictions = []
             try:
                 for i in tqdm(range(0, len(images), batch_size)):
-                    predictions.extend(detector.get_detections_for_batch(np.array(images[i:i + batch_size])))
+                    # predictions.extend(detector.get_detections_for_batch(np.array(images[i:i + batch_size])))
+                    predictions.append([int(x) for x in self.face_detector.run(np.array(images[i]))[0].bbox])
             except RuntimeError:
                 if batch_size == 1:
                     raise RuntimeError(
@@ -127,7 +130,7 @@ class W2l:
         if not self.nosmooth: boxes = self.get_smoothened_boxes(boxes, T=5)
         results = [[image[y1: y2, x1:x2], (y1, y2, x1, x2)] for image, (x1, y1, x2, y2) in zip(images, boxes)]
 
-        del detector
+        # del detector
 
         print("--- %s seconds ---" % (time.time() - start_time))
 
@@ -217,7 +220,7 @@ class W2l:
             video_stream = cv2.VideoCapture(self.face)
             fps = video_stream.get(cv2.CAP_PROP_FPS)
 
-            logger.info('VisualDubber {} - Reading video frames...'.format(self.id))
+            logger.debug('VisualDubber {} - Reading video frames...'.format(self.id))
 
             full_frames = []
             while 1:
@@ -240,7 +243,7 @@ class W2l:
 
                 full_frames.append(frame)
 
-        logger.info('VisualDubber {} - Number of frames available for inference: {}'.format(self.id, len(full_frames)))
+        logger.debug('VisualDubber {} - Number of frames available for inference: {}'.format(self.id, len(full_frames)))
 
 
 
@@ -260,7 +263,7 @@ class W2l:
             mel_chunks.append(mel[:, start_idx: start_idx + self.mel_step_size])
             i += 1
 
-        logger.info('VisualDubber {} - Length of mel chunks: {}'.format(self.id, len(mel_chunks)))
+        logger.debug('VisualDubber {} - Length of mel chunks: {}'.format(self.id, len(mel_chunks)))
 
 
         full_frames = full_frames[:len(mel_chunks)]
@@ -277,7 +280,7 @@ class W2l:
 
             if i == 0:
                 model = self.load_model(self.checkpoint_path)
-                logger.info('VisualDubber {} - Model loaded'.format(self.id))
+                logger.debug('VisualDubber {} - Model loaded'.format(self.id))
 
                 frame_h, frame_w = full_frames[0].shape[:-1]
                 out = cv2.VideoWriter(self.output_folder + '/output/result.avi',

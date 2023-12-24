@@ -10,7 +10,7 @@ class FaceAnalyzer:
   
 	def __init__(self):
 		self.id = uuid.uuid4()
-		logger.info('FaceAnalyzer {} - Initialize'.format(self.id))
+		logger.debug('FaceAnalyzer {} - Initialize'.format(self.id))
 		self.tasks = {}
 		self._models = {}
 		for task in FACE_ANALYZER_MODELS:
@@ -38,7 +38,7 @@ class FaceAnalyzer:
 	
 	
 	def run(self, frame: Frame):
-		logger.info('FaceAnalyzer {} - Run'.format(self.id))
+		logger.debug('FaceAnalyzer {} - Run'.format(self.id))
 
 		for task in self.tasks.keys():
 			print(task)

@@ -16,25 +16,28 @@ class FaceDetector:
   
 	def __init__(self):
 		self.id = uuid.uuid4()
-		logger.info('FaceDetector {} - Initialize'.format(self.id))
+		logger.debug('FaceDetector {} - Initialize'.format(self.id))
 		self.model = cv2.FaceDetectorYN.create(FACE_ANALYZER_MODELS['detection']['face_detection_yunet']['path'], None, (0, 0))
 		self.face_recognizer = onnxruntime.InferenceSession(FACE_ANALYZER_MODELS['recognition']['face_recognition_arcface_inswapper']['path'], 
 													  providers=onnx_providers)
 
-	def run(self, frame):
-		logger.info('FaceDetector {} - Run'.format(self.id))
+		self.model.setScoreThreshold(0.5)
+		self.model.setNMSThreshold(0.5)
+		self.model.setTopK(100)
+		self.input_size = (1024, 1024)
+
+	def run(self, frame, compute_embedings=False):
+		logger.debug('FaceDetector {} - Run'.format(self.id))
 
 		faces: List[Face] = []
 
 		# preprocessing
-		temp_frame = resize_frame_dimension(frame, 1024, 1024)
+		temp_frame = resize_frame_dimension(frame, self.input_size[0], self.input_size[1])
 		temp_frame_height, temp_frame_width, _ = temp_frame.shape
 		frame_height, frame_width, _ = frame.shape
 		ratio_height = frame_height / temp_frame_height
 		ratio_width = frame_width / temp_frame_width
-		self.model.setScoreThreshold(0.5)
-		self.model.setNMSThreshold(0.5)
-		self.model.setTopK(100)
+
 		self.model.setInputSize((temp_frame_width, temp_frame_height))
 
 		# inference
@@ -52,7 +55,8 @@ class FaceDetector:
 				]
 				face = Face(bbox=bbox, confidence=detection[14])
 				face.keypoints = (detection[4:14].reshape((5, 2)) * [[ ratio_width, ratio_height ]]).tolist()
-				# face.embedding = self.calc_embedding(temp_frame, face.keypoints)
+				if compute_embedings:
+					face.embedding = self.calc_embedding(temp_frame, face.keypoints)
 				faces.append(face)
 				
 		return self.identify_faces(faces)
@@ -71,7 +75,7 @@ class FaceDetector:
 		return embedding
 
 	def identify_faces(self, detected_faces):
-		# logger.info('FaceDetector {} - Identify faces'.format(self.id))
+		# logger.debug('FaceDetector {} - Identify faces'.format(self.id))
 		for idx, detected_face in enumerate(detected_faces):
 			detected_face.id = idx + 1
 		return detected_faces

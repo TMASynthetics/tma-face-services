@@ -79,24 +79,24 @@ class FaceDetector(object):
             raise ValueError
 
         if self.verbose:
-            logger.info("Constructing the list of images.")
+            logger.debug("Constructing the list of images.")
         additional_pattern = '/**/*' if recursive else '/*'
         files = []
         for extension in extensions:
             files.extend(glob.glob(path + additional_pattern + extension, recursive=recursive))
 
         if self.verbose:
-            logger.info("Finished searching for images. %s images found", len(files))
-            logger.info("Preparing to run the detection.")
+            logger.debug("Finished searching for images. %s images found", len(files))
+            logger.debug("Preparing to run the detection.")
 
         predictions = {}
         for image_path in tqdm(files, disable=not show_progress_bar):
             if self.verbose:
-                logger.info("Running the face detector on image: %s", image_path)
+                logger.debug("Running the face detector on image: %s", image_path)
             predictions[image_path] = self.detect_from_image(image_path)
 
         if self.verbose:
-            logger.info("The detector was successfully run on all %s images", len(files))
+            logger.debug("The detector was successfully run on all %s images", len(files))
 
         return predictions
 
