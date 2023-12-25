@@ -156,9 +156,9 @@ class W2l:
 
             face = cv2.resize(face, (self.img_size, self.img_size))
 
-            # cv2.namedWindow('face', 0)
-            # cv2.imshow('face', face)
-            # cv2.waitKey(1)
+            cv2.namedWindow('face', 0)
+            cv2.imshow('face', face)
+            cv2.waitKey(1)
 
             img_batch.append(face)
             mel_batch.append(m)
@@ -185,6 +185,12 @@ class W2l:
 
             img_batch = np.concatenate((img_masked, img_batch), axis=3) / 255.
             mel_batch = np.reshape(mel_batch, [len(mel_batch), mel_batch.shape[1], mel_batch.shape[2], 1])
+
+
+
+            # cv2.namedWindow('face', 0)
+            # cv2.imshow('face', img_batch[0][:, :, 3:])
+            # cv2.waitKey(1)
 
             yield img_batch, mel_batch, frame_batch, coords_batch
 

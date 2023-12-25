@@ -4,6 +4,7 @@ import cv2
 import dlib
 import json
 import torch
+from face_services.processors.face_detector import FaceDetector
 import face_services.processors.wav2lip.face_detection as face_detection
 from imutils import face_utils
 import subprocess
@@ -44,6 +45,7 @@ class Wav2LipUHQ:
 
         self.audio_path = audio_path
 
+        self.face_detector = FaceDetector()
         self.face_enhancer = FaceEnhancer(model='codeformer')
 
     def find_ffmpeg_binary(self):
@@ -190,7 +192,9 @@ class Wav2LipUHQ:
             image_restored_gray = cv2.cvtColor(image_restored2, cv2.COLOR_RGB2GRAY)
 
             # Detect faces
-            rects = detector.get_detections_for_batch(np.array([np.array(image_restored2)]))
+            # rects = detector.get_detections_for_batch(np.array([np.array(image_restored2)]))
+            rects = [list(map(int, face.bbox)) for face in self.face_detector.run(image_restored2)]
+           
 
             # Initialize mask
             mask = np.zeros_like(original_gray)

@@ -21,5 +21,5 @@ def serialize_faces_analysis(detected_faces):
     return [detected_face.__dict__ for detected_face in detected_faces]
 
 
-onnx_providers = ['CUDAExecutionProvider', 'CoreMLExecutionProvider', 'CPUExecutionProvider']
-# onnx_providers = ['CPUExecutionProvider']
+# onnx_providers = ['CUDAExecutionProvider', 'CoreMLExecutionProvider', 'CPUExecutionProvider']
+onnx_providers = ['CPUExecutionProvider']

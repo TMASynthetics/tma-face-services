@@ -8,13 +8,10 @@ from scipy.io import wavfile
 class Audio:
     def __init__(self, path, sample_rate=None):
         self.path = path
-        self.time_series, self.sample_rate = librosa.load(path, sr=sample_rate)
+        self.time_series, self.sample_rate = librosa.load(path, sr=sample_rate)  #, offset=0, duration=0)
         self.mel = librosa.feature.melspectrogram(y=self.time_series)
 
-    @property    
     def duration(self) -> float:
         return librosa.get_duration(y=self.time_series, sr=self.sample_rate)
     
 
-
-    # ffmpeg -i tests/files/nwt_40_Mt_F_05.mp3 nwt_40_Mt_F_05.wav

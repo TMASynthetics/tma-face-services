@@ -44,7 +44,7 @@ class FaceDetector:
 		_, detections = self.model.detect(temp_frame)
 
 		# postprocessing
-		if detections.any():
+		if detections is not None:
 			for detection in detections:
 				bbox =\
 				[
