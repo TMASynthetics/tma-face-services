@@ -9,6 +9,7 @@ import os
 from face_services.components.audio import Audio
 from face_services.components.video import Video
 from face_services.processors.face_detector import FaceDetector
+from face_services.processors.wav2lip.visual_dubber import VisualDubber
 from face_services.processors.wav2lip.w2l import W2l
 from face_services.processors.wav2lip.wav2lip_uhq import Wav2LipUHQ
 from face_services.jobs_database import jobs_database
@@ -42,6 +43,10 @@ class FaceVisualDubber:
 		if model is None or model not in self.get_available_models():
 			model = self.get_available_models()[0]
 		logger.debug('VisualDubber {} - Current model is : {}'.format(self.id, model))
+
+
+		visual_dubber = VisualDubber(self.source_video.path, [self.target_audio.path])
+		visual_dubber.run()
 
 		w2l = W2l(self.source_video.path, 
 			self.target_audio.path, 
