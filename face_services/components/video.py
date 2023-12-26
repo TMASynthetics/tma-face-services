@@ -24,6 +24,10 @@ class Video:
         self.time_stop_ms = time_stop_ms
   
     @property    
+    def name(self) -> str:
+        return self.path.split('/')[-1].split('.')[0]
+    
+    @property    
     def is_video(self) -> bool:
         return int(self._video.get(cv2.CAP_PROP_FRAME_COUNT)) > 0
     

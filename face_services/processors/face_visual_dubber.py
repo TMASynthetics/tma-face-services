@@ -16,13 +16,14 @@ from face_services.jobs_database import jobs_database
 
 class FaceVisualDubber:
   
-	def __init__(self, video_source_path=None, audio_target_path=None):
+	def __init__(self, video_source_path=None, audio_targets_paths=None):
 		self.id = str(uuid.uuid1())
 		logger.debug('VisualDubber {} - Initialize'.format(self.id))
 		if video_source_path:
 			self.source_video = Video(path=video_source_path)
-		if audio_target_path:
-			self.target_audio = Audio(path=audio_target_path)
+		# if audio_target_path:
+		# 	self.target_audio = Audio(path=audio_target_path)
+		self.audio_targets_paths = audio_targets_paths
 
 		self.face_detector = FaceDetector()
 
@@ -45,23 +46,23 @@ class FaceVisualDubber:
 		logger.debug('VisualDubber {} - Current model is : {}'.format(self.id, model))
 
 
-		visual_dubber = VisualDubber(self.source_video.path, [self.target_audio.path])
+		visual_dubber = VisualDubber(self.source_video.path, self.audio_targets_paths, self.folder_path)
 		visual_dubber.run()
 
-		w2l = W2l(self.source_video.path, 
-			self.target_audio.path, 
-			model, True, 1, 0, 20, 0, 0, None, 
-			self.folder_path, self.id)
+		# w2l = W2l(self.source_video.path, 
+		# 	self.target_audio.path, 
+		# 	model, True, 1, 0, 20, 0, 0, None, 
+		# 	self.folder_path, self.id)
 		
-		w2l_output = w2l.execute()
+		# w2l_output = w2l.execute()
 
-		w2luhq = Wav2LipUHQ(self.source_video.path, w2l_output, "GFPGAN", 30, 15, 15, True, None, 
-					  1, 75, self.folder_path, False, self.target_audio.path)
-		w2luhq.execute()
+		# w2luhq = Wav2LipUHQ(self.source_video.path, w2l_output, "GFPGAN", 30, 15, 15, True, None, 
+		# 			  1, 75, self.folder_path, False, self.target_audio.path)
+		# w2luhq.execute()
 
-		Video.create_video_from_images(os.path.join(self.folder_path, 'frames_processed'), 
-								 os.path.join(self.folder_path, 'output', 'result_enhanced.mp4'),
-								 self.source_video.fps, self.target_audio.path)
+		# Video.create_video_from_images(os.path.join(self.folder_path, 'frames_processed'), 
+		# 						 os.path.join(self.folder_path, 'output', 'result_enhanced.mp4'),
+		# 						 self.source_video.fps, self.target_audio.path)
 
 		output_path = self.clean_and_close()
 

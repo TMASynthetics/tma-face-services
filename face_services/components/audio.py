@@ -14,4 +14,6 @@ class Audio:
     def duration(self) -> float:
         return librosa.get_duration(y=self.time_series, sr=self.sample_rate)
     
-
+    @property    
+    def name(self) -> str:
+        return self.path.split('/')[-1].split('.')[0]

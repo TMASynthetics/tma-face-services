@@ -14,13 +14,13 @@ from face_services.processors.wav2lip.models.wav2lip import Wav2Lip
 from pkg_resources import resource_filename
 from face_services.logger import logger
 from face_services.jobs_database import jobs_database
-
+from face_services.logger import logger
 
 
 
 class VisualDubber:
   
-    def __init__(self, video_path: str, audio_paths: List):
+    def __init__(self, video_path: str, audio_paths: List, output_folder):
 
         self.video = Video(video_path)
         self.audios = [Audio(audio_path) for audio_path in audio_paths]
@@ -39,19 +39,18 @@ class VisualDubber:
         self.model = self.load_model(self.checkpoint_path)
 
         self.mel_step_size = 16
-        self.batch_size = 128
+        self.batch_size = 128*4
         self.img_size = 96
 
         self.face_enhancer = FaceEnhancer()
         self.face_detector = FaceDetector()
 
-
-
-
         self.frames = []
         self.bboxes = []
         self.mel_chunks = []
         self.generated_frames = []
+
+        self.output_folder = output_folder
 
 
 
@@ -75,31 +74,53 @@ class VisualDubber:
 
     def run(self):
 
+        dubbed_videos = []
 
-        for batch_idx in range(self.video.frame_number // self.batch_size + 1):
+        for audio in tqdm(self.audios):
 
-            self.frames = []
-            self.bboxes = []
-            self.mel_chunks = []
-            self.generated_frames = []
+            logger.info('Dubbing {} video with {} audio'.format(self.video.name, audio.name))
+            start = time.time()
 
+            self.video._video.set(cv2.CAP_PROP_POS_FRAMES, 0)
 
-            self.extract_melspectrogram(self.audios[0].path)
-            self.extract_frames()
-            self.detect_faces()
+            self.output_video = cv2.VideoWriter(os.path.join(self.output_folder, 'output', 'result.mp4'),
+                            cv2.VideoWriter_fourcc(*'mp4v'), self.video.fps, (self.video.width, self.video.height))
 
-            self.frames = self.frames[:len(self.mel_chunks)]
-            self.bboxes = self.bboxes[:len(self.mel_chunks)]
+            total_mel_chuncks = self.extract_melspectrogram(audio.path)
 
-            mel_batch, face_batch, = self.prepare_data()
+            for batch_idx in tqdm(range(self.video.frame_number // self.batch_size + 1)):
 
-            self.inference(face_batch, mel_batch)
+                self.frames = []
+                self.bboxes = []
 
-        
+                if batch_idx*self.batch_size+self.batch_size < len(total_mel_chuncks):
+                    self.mel_chunks = total_mel_chuncks[batch_idx*self.batch_size:batch_idx*self.batch_size+self.batch_size] 
+                else:
+                    self.mel_chunks = total_mel_chuncks[batch_idx*self.batch_size:] 
 
+                self.generated_frames = []
 
+                self.extract_frames()
 
-        return None
+                self.detect_faces()
+
+                self.frames = self.frames[:len(self.mel_chunks)]
+                self.bboxes = self.bboxes[:len(self.mel_chunks)]
+
+                mel_batch, face_batch, = self.prepare_data()
+
+                self.inference(face_batch, mel_batch)
+
+            self.clean()
+
+            Video.add_audio_to_video(os.path.join(self.output_folder, 'output', 'result.mp4'), 
+                                                  audio.path, os.path.join(self.output_folder, 'output', self.video.name + '_' + audio.name + '.mp4'))
+
+            dubbed_videos.append(os.path.join(self.output_folder, 'output', self.video.name + '_' + audio.name + '.mp4'))
+
+            print(time.time() - start)
+
+        return dubbed_videos
 
     def extract_frames(self):
         for _ in range(self.batch_size):
@@ -143,18 +164,21 @@ class VisualDubber:
 
         predictions = pred.cpu().numpy().transpose(0, 2, 3, 1) * 255.
 
-        generated_frames = []
+        # generated_frames = []
+
         for frame_idx, (prediction, frame, bbox) in enumerate(zip(predictions, self.frames, self.bboxes)):
             x1, y1, x2, y2 = bbox
             prediction = cv2.resize(prediction.astype(np.uint8), (x2 - x1, y2 - y1))
             frame[y1:y2, x1:x2] = prediction
-            generated_frames.append(frame)
 
-            cv2.namedWindow('frame', 0)
-            cv2.imshow('frame', frame)
-            cv2.waitKey(1)
+            # generated_frames.append(frame)
+            # cv2.namedWindow('frame', 0)
+            # cv2.imshow('frame', frame)
+            # cv2.waitKey(1)
+
+            self.output_video.write(frame)
             
-        return generated_frames
+        return None
 
     def extract_melspectrogram(self, audio):
 
@@ -163,15 +187,18 @@ class VisualDubber:
 
         mel_idx_multiplier = 80. / self.fps
         i = 0
+        mel_chunks = []
         while 1:
             start_idx = int(i * mel_idx_multiplier)
             if start_idx + self.mel_step_size > len(mel[0]):
-                self.mel_chunks.append(mel[:, len(mel[0]) - self.mel_step_size:])
+                mel_chunks.append(mel[:, len(mel[0]) - self.mel_step_size:])
                 break
-            self.mel_chunks.append(mel[:, start_idx: start_idx + self.mel_step_size])
+            mel_chunks.append(mel[:, start_idx: start_idx + self.mel_step_size])
             i += 1
 
+        return mel_chunks
+
     def clean(self):
-        self.model.cpu()
+        self.output_video.release()
         torch.cuda.empty_cache()
         gc.collect()
