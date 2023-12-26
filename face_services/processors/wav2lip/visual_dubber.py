@@ -7,7 +7,6 @@ from face_services.processors.face_enhancer import FaceEnhancer
 import subprocess
 from tqdm import tqdm
 import torch
-import face_services.processors.wav2lip.face_detection as face_detection
 from face_services.processors.wav2lip.models.wav2lip import Wav2Lip
 from pkg_resources import resource_filename
 from face_services.logger import logger
@@ -29,6 +28,9 @@ class VisualDubber:
 
         self.batch_size = 128
 
+        self.face_enhancer = FaceEnhancer()
+        self.face_detector = FaceDetector()
+
 
 
     def run(self):
@@ -41,6 +43,9 @@ class VisualDubber:
 
 
     def detect_faces(self):
+
+        for i in tqdm(range(0, len(images), batch_size)):
+            predictions.append([int(x) for x in self.face_detector.run(np.array(images[i]))[0].bbox])
         pass
 
 
