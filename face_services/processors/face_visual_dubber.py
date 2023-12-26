@@ -50,13 +50,13 @@ class FaceVisualDubber:
 		
 		w2l_output = w2l.execute()
 
-		w2luhq = Wav2LipUHQ(self.source_video.path, w2l_output, "GFPGAN", 30, 15, 15, True, None, 
-					  1, 75, self.folder_path, False, self.target_audio.path)
-		w2luhq.execute()
+		# w2luhq = Wav2LipUHQ(self.source_video.path, w2l_output, "GFPGAN", 30, 15, 15, True, None, 
+		# 			  1, 75, self.folder_path, False, self.target_audio.path)
+		# w2luhq.execute()
 
-		Video.create_video_from_images(os.path.join(self.folder_path, 'frames_processed'), 
-								 os.path.join(self.folder_path, 'output', 'result_enhanced.mp4'),
-								 self.source_video.fps, self.target_audio.path)
+		# Video.create_video_from_images(os.path.join(self.folder_path, 'frames_processed'), 
+		# 						 os.path.join(self.folder_path, 'output', 'result_enhanced.mp4'),
+		# 						 self.source_video.fps, self.target_audio.path)
 
 		output_path = self.clean_and_close()
 

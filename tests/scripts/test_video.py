@@ -1,3 +1,4 @@
+import glob
 import logging
 import os
 import sys
@@ -7,7 +8,13 @@ from face_services.components.video import Video
 
 
 
-Video.extract_and_save_sample('tests/files/vd1/CO-r21_E_129_r720P.mp4', 'tests/files/vd1/vd1_source.mp4', 1300, 61300)
+# Video.extract_and_save_sample('tests/files/vd1/CO-r21_E_129_r720P.mp4', 'tests/files/vd1/vd1_source.mp4', 1300, 61300)
+
+
+
+for path in glob.glob('tests/files/vd1/originals/*.mp4'):   
+    Video.extract_and_save_sample(path, path.replace(path.split('/')[-2], 'targets'), 1300, 61300)
+    audio_path = Video.extract_audio_from_video(video_path=path.replace(path.split('/')[-2], 'targets'), extracted_audio_folder='tests/files/vd1/targets')
 
 
 # video = Video('tests/files/vd1.mp4')
