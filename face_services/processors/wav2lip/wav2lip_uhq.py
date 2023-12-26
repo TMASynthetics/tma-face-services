@@ -5,7 +5,7 @@ import dlib
 import json
 import torch
 from face_services.processors.face_detector import FaceDetector
-import face_services.processors.wav2lip.face_detection as face_detection
+# import face_services.processors.wav2lip.face_detection as face_detection
 from imutils import face_utils
 import subprocess
 # from modules.shared import state, opts
@@ -109,13 +109,13 @@ class Wav2LipUHQ:
 
     def initialize_dlib_predictor(self):
         print("[INFO] Loading the predictor...")
-        detector = face_detection.FaceAlignment(face_detection.LandmarksType._2D,
-                                                flip_input=False, device=self.device)
+        # detector = face_detection.FaceAlignment(face_detection.LandmarksType._2D,
+        #                                         flip_input=False, device=self.device)
         
         
 
         predictor = dlib.shape_predictor(os.path.join(os.getcwd(), 'face_services', 'models', 'face_analyzer', 'shape_predictor_68_face_landmarks.dat'))
-        return detector, predictor
+        return predictor
 
     def initialize_video_streams(self):
         print("[INFO] Loading File...")
@@ -139,7 +139,7 @@ class Wav2LipUHQ:
         processed_path = self.output_folder + '/frames_processed/'
         final_path = self.output_folder + '/output/'
         
-        detector, predictor = self.initialize_dlib_predictor()
+        predictor = self.initialize_dlib_predictor()
         vs, vi = self.initialize_video_streams()
         (mstart, mend) = face_utils.FACIAL_LANDMARKS_IDXS["mouth"]
         (jstart, jend) = face_utils.FACIAL_LANDMARKS_IDXS["jaw"]

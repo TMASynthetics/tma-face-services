@@ -7,7 +7,7 @@ from face_services.processors.face_enhancer import FaceEnhancer
 import subprocess
 from tqdm import tqdm
 import torch
-import face_services.processors.wav2lip.face_detection as face_detection
+# import face_services.processors.wav2lip.face_detection as face_detection
 from face_services.processors.wav2lip.models.wav2lip import Wav2Lip
 from pkg_resources import resource_filename
 from face_services.logger import logger
@@ -156,9 +156,9 @@ class W2l:
 
             face = cv2.resize(face, (self.img_size, self.img_size))
 
-            cv2.namedWindow('face', 0)
-            cv2.imshow('face', face)
-            cv2.waitKey(1)
+            # cv2.namedWindow('face', 0)
+            # cv2.imshow('face', face)
+            # cv2.waitKey(1)
 
             img_batch.append(face)
             mel_batch.append(m)
