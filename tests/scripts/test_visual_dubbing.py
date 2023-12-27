@@ -11,16 +11,23 @@ from face_services.processors.face_visual_dubber import FaceVisualDubber
 time_start = time.time()
 
 # face_visual_dubber = FaceVisualDubber(video_source_path='tests/files/vd1/vd1_source.mp4', 
-#                   audio_targets_paths=['tests/files/vd1/targets/CO-r21_F_129_r240P.wav',
-#                                        'tests/files/vd1/targets/CO-r21_ALN_129_r240P.wav',
-#                                        'tests/files/vd1/targets/CO-r21_X_129_r240P.wav'])
+#                   audio_targets_paths=['tests/files/vd1/targets/CO-r21_S_129_r240P.wav'])
 # face_visual_dubber.run()
 
-face_visual_dubber = FaceVisualDubber(video_source_path='tests/files/vd1.mp4', 
-                  audio_targets_paths=['tests/files/vd1.wav',
-                                       'tests/files/vd1.wav',
-                                       'tests/files/vd1.wav'])
+face_visual_dubber = FaceVisualDubber(video_source_path='tests/files/vd1/vd1_source.mp4', 
+                  audio_targets_paths=['tests/files/vd1/targets/CO-r21_S_129_r240P.wav',
+                                       'tests/files/vd1/targets/CO-r21_ALN_129_r240P.wav',
+                                       'tests/files/vd1/targets/CO-r21_CH_129_r240P.wav',
+                                       'tests/files/vd1/targets/CO-r21_S_129_r240P.wav',
+                                       'tests/files/vd1/targets/CO-r21_X_129_r240P.wav',
+                                       'tests/files/vd1/targets/CO-r21_TPO_129_r240P.wav'])
 face_visual_dubber.run()
+
+# face_visual_dubber = FaceVisualDubber(video_source_path='tests/files/vd1.mp4', 
+#                   audio_targets_paths=['tests/files/vd1.wav',
+#                                        'tests/files/vd1.wav',
+#                                        'tests/files/vd1.wav'])
+# face_visual_dubber.run()
 
 # face_visual_dubber = FaceVisualDubber(video_source_path='tests/files/vd1.mp4', 
 #                   audio_target_path='tests/files/vd1.wav')
