@@ -53,6 +53,11 @@ class VisualDubber:
 
         self.output_folder = output_folder
 
+        self.output_videos = {}
+        for audio in self.audios:
+            self.output_videos[audio.name] = cv2.VideoWriter(os.path.join(self.output_folder, 'output', audio.name + '_result.mp4'),
+                        cv2.VideoWriter_fourcc(*'mp4v'), self.video.fps, (self.video.width, self.video.height))
+            audio.mel_chunks = self.extract_melspectrogram(audio.path)
 
     @Timer(name="load_model")
     def load_model(self, path):
@@ -80,51 +85,41 @@ class VisualDubber:
 
         dubbed_videos = []
 
-        audio = self.audios[0]
-
-        logger.info('Dubbing {} video with {} audio'.format(self.video.name, audio.name))
-
-        start = time.time()
-
-        self.video._video.set(cv2.CAP_PROP_POS_FRAMES, 0)
-
-        self.output_video = cv2.VideoWriter(os.path.join(self.output_folder, 'output', 'result.mp4'),
-                        cv2.VideoWriter_fourcc(*'mp4v'), self.video.fps, (self.video.width, self.video.height))
-
-        total_mel_chuncks = self.extract_melspectrogram(audio.path)
-
         for batch_idx in tqdm(range(self.video.frame_number // self.batch_size + 1)):
 
             self.frames = []
             self.bboxes = []
-
-            if batch_idx*self.batch_size+self.batch_size < len(total_mel_chuncks):
-                self.mel_chunks = total_mel_chuncks[batch_idx*self.batch_size:batch_idx*self.batch_size+self.batch_size] 
-            else:
-                self.mel_chunks = total_mel_chuncks[batch_idx*self.batch_size:] 
-
             self.generated_frames = []
 
             self.extract_frames()
-
             self.detect_faces()
 
-            self.frames = self.frames[:len(self.mel_chunks)]
-            self.bboxes = self.bboxes[:len(self.mel_chunks)]
+            for audio in self.audios:
+                if batch_idx*self.batch_size+self.batch_size < len(audio.mel_chunks):
+                    audio.current_mel_chunk = audio.mel_chunks[batch_idx*self.batch_size:batch_idx*self.batch_size+self.batch_size] 
+                else:
+                    audio.current_mel_chunk = audio.mel_chunks[batch_idx*self.batch_size:] 
 
-            mel_batch, face_batch, = self.prepare_data()
 
-            self.inference(face_batch, mel_batch)
+            self.frames = self.frames[:len(audio.current_mel_chunk)]
+            self.bboxes = self.bboxes[:len(audio.current_mel_chunk)]
 
+            face_batch = self.prepare_face_batch()
+
+            for audio in self.audios:
+                mel_batch = self.prepare_mel_batch(audio)
+                self.inference(face_batch, mel_batch, audio)
+
+        for output_video in self.output_videos.values():
+            output_video.release()
+
+        for audio in self.audios:
+            Video.add_audio_to_video(os.path.join(self.output_folder, 'output', audio.name + '_result.mp4'), 
+                                                    audio.path, os.path.join(self.output_folder, 'output', self.video.name + '_' + audio.name + '.mp4'))
+
+            dubbed_videos.append(os.path.join(self.output_folder, 'output', self.video.name + '_' + audio.name + '.mp4'))
 
         self.clean()
-
-        Video.add_audio_to_video(os.path.join(self.output_folder, 'output', 'result.mp4'), 
-                                                audio.path, os.path.join(self.output_folder, 'output', self.video.name + '_' + audio.name + '.mp4'))
-
-        dubbed_videos.append(os.path.join(self.output_folder, 'output', self.video.name + '_' + audio.name + '.mp4'))
-
-        print(time.time() - start)
 
         return dubbed_videos
 
@@ -142,19 +137,15 @@ class VisualDubber:
             bbox[3] += 20
             self.bboxes.append(bbox)
 
-    @Timer(name="prepare_data")
-    def prepare_data(self):
-        face_batch, mel_batch = [], []
-
-        for i, mel in enumerate(self.mel_chunks):
+    @Timer(name="prepare_face_batch")
+    def prepare_face_batch(self):
+        face_batch = []
+        for i, _ in enumerate(self.frames):
             idx = i % len(self.frames)
             frame = self.frames[idx]
             bbox = self.bboxes[idx]
-
             face = cv2.resize(frame[bbox[1]:bbox[3], bbox[0]:bbox[2]], (self.img_size, self.img_size))
             face_batch.append(face)
-
-            mel_batch.append(mel)
 
         if len(face_batch) > 0:
             face_batch = np.asarray(face_batch)
@@ -162,13 +153,16 @@ class VisualDubber:
             img_masked[:, self.img_size // 2:] = 0
             face_batch = np.concatenate((img_masked, face_batch), axis=3) / 255.
 
-            mel_batch = np.asarray(mel_batch)
-            mel_batch = np.reshape(mel_batch, [len(mel_batch), mel_batch.shape[1], mel_batch.shape[2], 1])
+        return face_batch
 
-        return mel_batch, face_batch
-
+    @Timer(name="prepare_mel_batch")
+    def prepare_mel_batch(self, audio):
+        mel_batch = np.asarray(audio.current_mel_chunk)
+        mel_batch = np.reshape(mel_batch, [len(mel_batch), mel_batch.shape[1], mel_batch.shape[2], 1])
+        return mel_batch
+    
     @Timer(name="inference")
-    def inference(self, img_batch, mel_batch):
+    def inference(self, img_batch, mel_batch, audio):
 
         img_batch = torch.FloatTensor(np.transpose(img_batch, (0, 3, 1, 2))).to(self.device)
         mel_batch = torch.FloatTensor(np.transpose(mel_batch, (0, 3, 1, 2))).to(self.device)
@@ -190,7 +184,7 @@ class VisualDubber:
             # cv2.imshow('frame', frame)
             # cv2.waitKey(1)
 
-            self.output_video.write(frame)
+            self.output_videos[audio.name].write(frame)
             
         return None
 
@@ -215,6 +209,5 @@ class VisualDubber:
 
     @Timer(name="clean")
     def clean(self):
-        self.output_video.release()
         torch.cuda.empty_cache()
         gc.collect()

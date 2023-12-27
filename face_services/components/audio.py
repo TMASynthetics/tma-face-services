@@ -10,6 +10,8 @@ class Audio:
         self.path = path
         self.time_series, self.sample_rate = librosa.load(path, sr=sample_rate)  #, offset=0, duration=0)
         self.mel = librosa.feature.melspectrogram(y=self.time_series)
+        self.mel_chunks = []
+        self.current_mel_chunk = []
 
     def duration(self) -> float:
         return librosa.get_duration(y=self.time_series, sr=self.sample_rate)

@@ -64,13 +64,13 @@ class FaceVisualDubber:
 		# 						 os.path.join(self.folder_path, 'output', 'result_enhanced.mp4'),
 		# 						 self.source_video.fps, self.target_audio.path)
 
-		output_path = self.clean_and_close()
+		# output_path = self.clean_and_close()
 
-		if self.id in jobs_database.keys():
-			jobs_database[self.id]['progress'] = 1
-			jobs_database[self.id]['path'] = output_path
+		# if self.id in jobs_database.keys():
+		# 	jobs_database[self.id]['progress'] = 1
+		# 	jobs_database[self.id]['path'] = output_path
 
-		return output_path
+		return None
 
 	def clean_and_close(self):
 		logger.debug('VisualDubber {} - Clean and close'.format(self.id))
