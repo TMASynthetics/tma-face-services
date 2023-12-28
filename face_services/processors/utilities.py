@@ -26,7 +26,6 @@ onnx_providers = ['CPUExecutionProvider']
 
 
 
-# timer.py
 
 import time
 from contextlib import ContextDecorator

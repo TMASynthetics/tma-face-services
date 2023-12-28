@@ -2,6 +2,7 @@ import glob
 import logging
 import os
 import sys
+import cv2
 
 sys.path.append(os.getcwd())
 
@@ -12,11 +13,22 @@ from face_services.components.audio import Audio
 
 # Video.extract_and_save_sample('tests/files/vd1/CO-r21_E_129_r720P.mp4', 'tests/files/vd1/vd1_source.mp4', 1300, 61300)
 
-audio = Audio('tests/files/ALN.wav')
+video = Video('tests/files/jesus1.png')
+# video = Video('tests/files/vd1.mp4')
 
-# for path in glob.glob('tests/files/vd1/originals/*.mp4'):   
-#     Video.extract_and_save_sample(path, path.replace(path.split('/')[-2], 'targets'), 1300, 61300)
-#     audio_path = Video.extract_audio_from_video(video_path=path.replace(path.split('/')[-2], 'targets'), extracted_audio_folder='tests/files/vd1/targets')
+
+while True:
+    frame = video.get_frame_position_by_index(0)
+
+    cv2.namedWindow('video', 0)
+    cv2.imshow('video', frame)
+    cv2.waitKey(1)
+
+    print()
+
+for path in glob.glob('tests/files/vd1/originals/*.mp4'):   
+    Video.extract_and_save_sample(path, path.replace(path.split('/')[-2], 'targets'), 1300, 61300)
+    audio_path = Video.extract_audio_from_video(video_path=path.replace(path.split('/')[-2], 'targets'), extracted_audio_folder='tests/files/vd1/targets')
 
 
 # video = Video('tests/files/vd1.mp4')

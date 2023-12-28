@@ -51,7 +51,6 @@ FACE_SWAPPER_MODELS =\
 	},
 }
 
-
 FACE_ENHANCER_MODELS =\
 {
 	'gfpgan_1.4':
@@ -79,4 +78,18 @@ FACE_ENHANCER_MODELS =\
 		'url': 'https://github.com/facefusion/facefusion-assets/releases/download/models/codeformer.onnx',
 		'path': resolve_relative_path('../models/face_enhancer/codeformer.onnx')
 	}
+}
+
+VISUAL_DUBBER_MODELS =\
+{
+	'wav2lip':
+	{
+		'url': '',
+		'path': resolve_relative_path('../models/visual_dubber/wav2lip.pth'),
+	},
+	'wav2lip_gan':
+	{
+		'url': '',
+		'path': resolve_relative_path('../models/visual_dubber/wav2lip_gan.pth'),
+	},
 }
