@@ -3,7 +3,6 @@ from face_services.logger import logger
 from typing import Any, Optional, List
 import threading
 import uuid
-import insightface
 import numpy
 from onnx import numpy_helper
 import onnx
@@ -61,9 +60,9 @@ class FaceSwapper:
 		logger.debug('FaceSwapper - Run')
 		swapped_frame = img_target.copy()
 
-		faces_target = self.face_detector.run(img_target)
+		faces_target = self.face_detector.run(img_target, compute_embedings=True)
 		if img_source is not None:
-			self.faces_source = self.face_detector.run(img_source)
+			self.faces_source = self.face_detector.run(img_source, compute_embedings=True)
 
 		self.check_current_model(swapper_model)
 
