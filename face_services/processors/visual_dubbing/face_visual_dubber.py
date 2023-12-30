@@ -1,4 +1,6 @@
 from ast import List
+import shutil
+import time
 import uuid
 import numpy as np
 import gc
@@ -14,58 +16,60 @@ from face_services.components.video import Video
 from face_services.processors.face_detector import FaceDetector
 from face_services.processors.face_enhancer import FaceEnhancer
 from face_services.models_list import VISUAL_DUBBER_MODELS
-
+from face_services.app_utils import jobs_database
 
 class FaceVisualDubber:
   
     def __init__(self, video_path: str, audio_paths: List, model_name: str=None) -> None:
 
-        self.id = str(uuid.uuid1())
-        logger.debug('FaceVisualDubber {} - Initialize'.format(self.id))
-          
-        self.video = Video(video_path)
-        self.audios = [Audio(path=audio_path, sample_rate=16e3) for audio_path in audio_paths]
+        if video_path and audio_paths is not None:
+            self.id = str(uuid.uuid1())
+            self.start_time = time.time()
+            logger.debug('FaceVisualDubber {} - Initialize'.format(self.id))
+            
+            self.video = Video(video_path)
+            self.audios = [Audio(path=audio_path, sample_rate=16e3) for audio_path in audio_paths]
 
-        self.fps = self.video.fps
+            self.fps = self.video.fps
 
-        if torch.cuda.is_available():
-            self.device = 'cuda'
-        elif torch.backends.mps.is_available():
-            self.device = 'mps'
-        else:
-            self.device = 'cpu'
+            if torch.cuda.is_available():
+                self.device = 'cuda'
+            elif torch.backends.mps.is_available():
+                self.device = 'mps'
+            else:
+                self.device = 'cpu'
 
-        if model_name is None or model_name not in self.get_available_models():
-            model_name = self.get_available_models()[0]
-        logger.debug('VisualDubber {} - Current model is : {}'.format(self.id, model_name))
-        self.checkpoint_path = VISUAL_DUBBER_MODELS[model_name]['path']
-        self.model = self.load_model()
+            if model_name is None or model_name not in self.get_available_models():
+                model_name = self.get_available_models()[0]
+            logger.debug('VisualDubber {} - Current model is : {}'.format(self.id, model_name))
+            self.checkpoint_path = VISUAL_DUBBER_MODELS[model_name]['path']
+            self.model = self.load_model()
 
-        self.mel_step_size = 16
-        self.batch_size = 128
-        self.img_size = 96
+            self.mel_step_size = 16
+            self.batch_size = 128
+            self.img_size = 96
 
-        # self.face_enhancer = FaceEnhancer()
-        self.face_detector = FaceDetector()
+            # self.face_enhancer = FaceEnhancer()
+            self.face_detector = FaceDetector()
 
-        self.frames = []
-        self.bboxes = []
-        self.face_batch = []
+            self.frames = []
+            self.bboxes = []
+            self.face_batch = []
 
-        self.output_folder = os.path.join(os.getcwd(), 'face_services', 'processors', 'temp', self.id)
-        if not os.path.exists(self.output_folder):
-            os.makedirs(self.output_folder)
-        for folder in ['frames', 'faces', 'audio', 'output', 'debug', 'faces_enhanced', 'frames_processed']:
-            if not os.path.exists(os.path.join(self.output_folder, folder)):
-                os.makedirs(os.path.join(self.output_folder, folder))
+            self.output_folder = os.path.join(os.getcwd(), 'face_services', 'processors', 'temp', self.id)
+            if not os.path.exists(self.output_folder):
+                os.makedirs(self.output_folder)
+            for folder in ['frames', 'faces', 'audio', 'output', 'debug', 'faces_enhanced', 'frames_processed']:
+                if not os.path.exists(os.path.join(self.output_folder, folder)):
+                    os.makedirs(os.path.join(self.output_folder, folder))
 
-        self.dubbed_videos_paths = []
+            self.dubbed_videos_paths = []
 
-        self.output_videos = {}
-        for audio in self.audios:
-            self.output_videos[audio.name] = cv2.VideoWriter(os.path.join(self.output_folder, 'output', audio.name + '_result.mp4'),
-                        cv2.VideoWriter_fourcc(*'mp4v'), self.video.fps, (self.video.width, self.video.height))
-            audio.mel_chunks = self.extract_melspectrogram(audio)
+            self.output_videos = {}
+            for audio in self.audios:
+                self.output_videos[audio.name] = cv2.VideoWriter(os.path.join(self.output_folder, 'output', audio.name + '_result.mp4'),
+                            cv2.VideoWriter_fourcc(*'mp4v'), self.video.fps, (self.video.width, self.video.height))
+                audio.mel_chunks = self.extract_melspectrogram(audio)
 
     @Timer(name="load_model")
     def load_model(self):
@@ -111,7 +115,16 @@ class FaceVisualDubber:
 
                 self.inference(self.face_batch, mel_batch, audio)
 
+                if self.id in jobs_database.keys():
+                    jobs_database[self.id]['progress'] = np.round(batch_idx/(max(self.video.frame_number, len(self.audios[0].mel_chunks)) // self.batch_size + 1 + 0.1), 2)
+                    jobs_database[self.id]['computing_time_s'] = np.round(time.time() - self.start_time, 2)
+
         self.clean_and_close()
+
+        if self.id in jobs_database.keys():
+            jobs_database[self.id]['progress'] = 1
+            jobs_database[self.id]['output'] = self.dubbed_videos_paths
+            jobs_database[self.id]['computing_time_s'] = np.round(time.time() - self.start_time, 2)
 
         return self.dubbed_videos_paths
 
@@ -188,13 +201,16 @@ class FaceVisualDubber:
         if not os.path.exists(os.path.join('outputs', self.id)):
             os.makedirs(os.path.join('outputs', self.id))
 
-        for audio in self.audios:
+        for idx, audio in enumerate(self.audios):
             self.output_videos[audio.name].release()
-            output_path = os.path.join('outputs', self.id, self.video.name + '_' + audio.name + '.mp4')
+            output_path = os.path.join('outputs', self.id + '_' + str(idx+1) + '.mp4')
             Video.add_audio_to_video(os.path.join(self.output_folder, 'output', audio.name + '_result.mp4'), 
                                      audio.path, output_path)
             self.dubbed_videos_paths.append(output_path)
         
+        if os.path.exists(self.output_folder):
+            shutil.rmtree(self.output_folder)
+            
         torch.cuda.empty_cache()
         gc.collect()
 

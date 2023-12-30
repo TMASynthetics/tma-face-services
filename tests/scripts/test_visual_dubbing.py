@@ -23,16 +23,16 @@ audio_targets_paths=[
 
 
 
-# video_source_path='tests/files/vd1/vd1_source.mp4'
-# audio_targets_paths=['tests/files/vd1/targets/CO-r21_F_129_r240P.wav']
+video_source_path='tests/files/vd1/vd1_source.mp4'
+audio_targets_paths=['tests/files/vd1/targets/CO-r21_F_129_r240P.wav']
 
 # video_source_path='tests/files/vd1.mp4'
 # audio_targets_paths=['tests/files/vd1.wav','tests/files/vd11.wav','tests/files/vd111.wav']
 
-video_source_path='tests/files/vd1.mp4'
-# video_source_path='tests/files/jesus1.png'
-audio_targets_paths=['tests/files/vd1.wav']
-# audio_targets_paths=['tests/files/vd1/targets/CO-r21_F_129_r240P.wav']
+# video_source_path='tests/files/vd1.mp4'
+video_source_path='tests/files/jesus1.png'
+# audio_targets_paths=['tests/files/vd1.wav']
+audio_targets_paths=['tests/files/vd1/targets/CO-r21_S_129_r240P.wav']
 
 visual_dubber = FaceVisualDubber(video_source_path, audio_targets_paths, model_name="wav2lip")
 visual_dubber.run()

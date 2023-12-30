@@ -1,5 +1,8 @@
+import io
 import os
 import subprocess
+import zipfile
+from fastapi import Response
 import numpy as np
 import cv2
 import json
@@ -16,13 +19,28 @@ IMAGE_MIME_TYPES = ["image/jpeg", "image/png", "image/gif", "image/bmp"]
 VIDEO_MIME_TYPES = ["video/x-msvideo", "video/mp4", "video/mpeg", "video/ogg", "video/webm", "video/3gpp", "video/3gpp2"]
 
 
-# # with open('database.json', 'w') as f:
-# #     json.dump({}, f)
-# # with open('database.json') as user_file:
-# #   jobs_database = json.loads(user_file.read())
+def zipfiles(filenames):
+    zip_filename = "archive.zip"
 
-# jobs_database = {}
+    s = io.BytesIO()
+    zf = zipfile.ZipFile(s, "w")
 
+    for fpath in filenames:
+        # Calculate path for file in zip
+        fdir, fname = os.path.split(fpath)
+
+        # Add file, at correct path
+        zf.write(fpath, fname)
+
+    # Must close zip for all contents to be written
+    zf.close()
+
+    # Grab ZIP file from in-memory, make response with correct MIME-type
+    resp = Response(s.getvalue(), media_type="application/x-zip-compressed", headers={
+        'Content-Disposition': f'attachment;filename={zip_filename}'
+    })
+
+    return resp
 
 def execute_command(command):
     process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
@@ -47,9 +65,12 @@ def get_optimal_font_scale(text, width):
             return scale/ratio, textSize[0][1]
     return 1, 60
 
-def perform_visual_dubbing(face_visual_dubber, visual_dubbing_model):
-    jobs_database[face_visual_dubber.id] = {'progress': 0, 'path': None}
-    return face_visual_dubber.run(model=visual_dubbing_model)
+def perform_visual_dubbing(face_visual_dubber):
+    jobs_database[face_visual_dubber.id] = {"task": "visual_dubbing", 
+                                            'progress': 0, 
+                                            'output': None, 
+                                            'computing_time_s': 0}
+    return face_visual_dubber.run()
     
 
 
