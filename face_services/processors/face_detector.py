@@ -18,8 +18,8 @@ class FaceDetector:
 		self.id = uuid.uuid4()
 		logger.debug('FaceDetector {} - Initialize'.format(self.id))
 		self.model = cv2.FaceDetectorYN.create(FACE_ANALYZER_MODELS['detection']['face_detection_yunet']['path'], None, (0, 0))
-		self.face_recognizer = onnxruntime.InferenceSession(FACE_ANALYZER_MODELS['recognition']['face_recognition_arcface_inswapper']['path'], 
-													  providers=onnx_providers)
+		# self.face_recognizer = onnxruntime.InferenceSession(FACE_ANALYZER_MODELS['recognition']['face_recognition_arcface_inswapper']['path'], 
+		# 											  providers=onnx_providers)
 
 		self.model.setScoreThreshold(0.5)
 		self.model.setNMSThreshold(0.5)
@@ -55,8 +55,8 @@ class FaceDetector:
 				]
 				face = Face(bbox=bbox, confidence=detection[14])
 				face.keypoints = (detection[4:14].reshape((5, 2)) * [[ ratio_width, ratio_height ]]).tolist()
-				if compute_embedings:
-					face.embedding = self.calc_embedding(temp_frame, face.keypoints)
+				# if compute_embedings:
+				# 	face.embedding = self.calc_embedding(temp_frame, face.keypoints)
 				faces.append(face)
 				
 		return self.identify_faces(faces)
