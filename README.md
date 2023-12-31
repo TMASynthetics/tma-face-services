@@ -1,10 +1,10 @@
 Face Services API
 ==========
 > State-of-the-art human face processing.
-> - [x] Face detection and analysis
-> - [x] Face anonymization
-> - [x] Face swapping
-> - [x] Face enhancement
+> - [ ] Face detection and analysis
+> - [ ] Face anonymization
+> - [ ] Face swapping
+> - [ ] Face enhancement
 > - [ ] Face reenactment
 > - [x] Visual dubbing
 
@@ -19,7 +19,7 @@ Please use Python 3.10.
 ```
 pip install -r requirements.txt
 ```
-2. Download the pretrained models from [here](https://jwsite.sharepoint.com/:u:/r/sites/WHQ-MEPS-TMASyntheticMedia-Team/Shared%20Documents/Products/Face%20Services%20API/models.zip?csf=1&web=1&e=7JRyLG).
+2. Download the pretrained models from [here](https://jwsite.sharepoint.com/:u:/r/sites/WHQ-MEPS-TMASyntheticMedia-Team/Shared%20Documents/Products/Face%20Services%20API/Face%20Services%20API%20-%20v1.1/models.zip?csf=1&web=1&e=Hscuxo).
 Unzip and place the _**models**_ folder in the _**face_services**_ folder
 
 Usage
