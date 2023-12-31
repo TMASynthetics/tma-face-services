@@ -8,9 +8,6 @@ Face Services API
 > - [ ] Face reenactment
 > - [x] Visual dubbing
 
-> [!NOTE]
-> This version works only with image file.
-
 Installation
 ------------
 Please use Python 3.10.
